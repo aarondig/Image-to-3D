@@ -167,7 +167,7 @@ Single-photo to point cloud & full 3D mesh web app. Phased development with quic
 - [x] **COMMIT:** "Add create-mesh API endpoint"
 
 ### Task 1.9: Backend API - status
-- [ ] 1.9.1: Create `api/status.ts`:
+- [x] 1.9.1: Create `api/status.ts`:
   ```typescript
   export default async function handler(req: VercelRequest, res: VercelResponse) {
     // CORS headers
@@ -177,10 +177,10 @@ Single-photo to point cloud & full 3D mesh web app. Phased development with quic
     // Return normalized response
   }
   ```
-- [ ] 1.9.2: Implement stateless polling (no KV storage)
-- [ ] 1.9.3: Map Tripo status codes to JobStatus enum
-- [ ] 1.9.4: Return asset URL when job succeeds
-- [ ] **COMMIT:** "Add status polling API endpoint"
+- [x] 1.9.2: Implement stateless polling (no KV storage)
+- [x] 1.9.3: Map Tripo status codes to JobStatus enum
+- [x] 1.9.4: Return asset URL when job succeeds
+- [x] **COMMIT:** "Add status polling API endpoint"
 
 ### Task 1.10: Polling Hook
 - [ ] 1.10.1: Create `src/hooks/useMeshJob.ts`:
