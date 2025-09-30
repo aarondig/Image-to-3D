@@ -226,11 +226,11 @@ Single-photo to point cloud & full 3D mesh web app. Phased development with quic
 - [x] **COMMIT:** "Integrate upload flow in main App"
 
 ### Task 1.12: Local Testing
-- [ ] 1.12.1: Run `npm run dev` and test upload flow
-- [ ] 1.12.2: Verify image resizes correctly
-- [ ] 1.12.3: Verify API calls reach localhost (stub responses if needed)
-- [ ] 1.12.4: Test error states (oversized file, invalid format)
-- [ ] **COMMIT:** "Fix bugs found in local testing"
+- [x] 1.12.1: Run `npm run dev` and test upload flow
+- [x] 1.12.2: Verify image resizes correctly
+- [x] 1.12.3: Verify API calls reach localhost (stub responses if needed)
+- [x] 1.12.4: Test error states (oversized file, invalid format)
+- [x] **COMMIT:** "Fix bugs found in local testing"
 
 ### Task 1.13: Vercel Deployment
 - [ ] 1.13.1: Run `npm install -g vercel` (if not installed)
