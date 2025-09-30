@@ -148,10 +148,10 @@ Single-photo to point cloud & full 3D mesh web app. Phased development with quic
 - [x] **COMMIT:** "Add StatusDisplay component"
 
 ### Task 1.8: Backend API - create-mesh
-- [ ] 1.8.1: Create `api/create-mesh.ts` (Vercel serverless function):
+- [x] 1.8.1: Create `api/create-mesh.ts` (Vercel serverless function):
   ```typescript
   import type { VercelRequest, VercelResponse } from '@vercel/node';
-  
+
   export default async function handler(req: VercelRequest, res: VercelResponse) {
     // CORS headers
     // Validate method (POST only)
@@ -161,10 +161,10 @@ Single-photo to point cloud & full 3D mesh web app. Phased development with quic
     // Return taskId + status
   }
   ```
-- [ ] 1.8.2: Add CORS headers for localhost:5173
-- [ ] 1.8.3: Implement Tripo API fetch with error handling
-- [ ] 1.8.4: Return 400/500 error codes appropriately
-- [ ] **COMMIT:** "Add create-mesh API endpoint"
+- [x] 1.8.2: Add CORS headers for localhost:5173
+- [x] 1.8.3: Implement Tripo API fetch with error handling
+- [x] 1.8.4: Return 400/500 error codes appropriately
+- [x] **COMMIT:** "Add create-mesh API endpoint"
 
 ### Task 1.9: Backend API - status
 - [ ] 1.9.1: Create `api/status.ts`:
