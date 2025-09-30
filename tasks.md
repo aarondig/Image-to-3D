@@ -197,7 +197,7 @@ Single-photo to point cloud & full 3D mesh web app. Phased development with quic
 - [x] **COMMIT:** "Add polling hook for job status"
 
 ### Task 1.11: Main App Integration
-- [ ] 1.11.1: Update `src/App.tsx`:
+- [x] 1.11.1: Update `src/App.tsx`:
   ```typescript
   function App() {
     const [imageDataUrl, setImageDataUrl] = useState<string | null>(null);
@@ -220,10 +220,10 @@ Single-photo to point cloud & full 3D mesh web app. Phased development with quic
     );
   }
   ```
-- [ ] 1.11.2: Implement `handleImageReady` API call
-- [ ] 1.11.3: Add reset functionality to clear state
-- [ ] 1.11.4: Add basic layout styling
-- [ ] **COMMIT:** "Integrate upload flow in main App"
+- [x] 1.11.2: Implement `handleImageReady` API call
+- [x] 1.11.3: Add reset functionality to clear state
+- [x] 1.11.4: Add basic layout styling
+- [x] **COMMIT:** "Integrate upload flow in main App"
 
 ### Task 1.12: Local Testing
 - [ ] 1.12.1: Run `npm run dev` and test upload flow
