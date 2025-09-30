@@ -73,11 +73,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(500).json({ error: 'Server configuration error' });
     }
 
+    // Extract base64 data without the data URL prefix (data:image/jpeg;base64,)
+    const base64Data = image.includes(',') ? image.split(',')[1] : image;
+
     const payload = {
       type: 'image_to_model',
       file: {
         type: 'png',
-        file_token: image,
+        file_token: base64Data,
       },
     };
 
