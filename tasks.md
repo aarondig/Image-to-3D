@@ -119,16 +119,16 @@ Single-photo to point cloud & full 3D mesh web app. Phased development with quic
 - [x] **COMMIT:** "Add image processing utilities"
 
 ### Task 1.6: ImageUpload Component
-- [ ] 1.6.1: Create `src/components/ImageUpload.tsx` with:
+- [x] 1.6.1: Create `src/components/ImageUpload.tsx` with:
   - Drag-and-drop zone
   - File input fallback
   - Image preview
   - Loading state during resize
-- [ ] 1.6.2: Call `validateImage()` on file selection
-- [ ] 1.6.3: Call `resizeImage()` and display preview
-- [ ] 1.6.4: Emit `onImageReady(dataUrl: string)` callback
-- [ ] 1.6.5: Add basic Tailwind/CSS styling (clean, centered)
-- [ ] **COMMIT:** "Add ImageUpload component with preview"
+- [x] 1.6.2: Call `validateImage()` on file selection
+- [x] 1.6.3: Call `resizeImage()` and display preview
+- [x] 1.6.4: Emit `onImageReady(dataUrl: string)` callback
+- [x] 1.6.5: Add basic Tailwind/CSS styling (clean, centered)
+- [x] **COMMIT:** "Add ImageUpload component with preview"
 
 ### Task 1.7: StatusDisplay Component
 - [ ] 1.7.1: Create `src/components/StatusDisplay.tsx`:
