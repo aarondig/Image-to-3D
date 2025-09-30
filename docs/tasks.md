@@ -43,10 +43,10 @@ Single-photo to point cloud & full 3D mesh web app. Phased development with quic
 - [x] **COMMIT:** "Reset project structure and organize directories"
 
 ### Task 1.2: Install Dependencies
-- [ ] 1.2.1: Run `npm install @react-three/fiber @react-three/drei three`
-- [ ] 1.2.2: Run `npm install -D @types/three`
-- [ ] 1.2.3: Verify `package.json` has TypeScript, React 18+, Vite 5+
-- [ ] **COMMIT:** "Add Three.js and R3F dependencies"
+- [x] 1.2.1: Run `npm install @react-three/fiber @react-three/drei three`
+- [x] 1.2.2: Run `npm install -D @types/three`
+- [x] 1.2.3: Verify `package.json` has TypeScript, React 18+, Vite 5+
+- [x] **COMMIT:** "Add Three.js and R3F dependencies"
 
 ### Task 1.3: Environment Configuration
 - [ ] 1.3.1: Create `.env.local` with:
