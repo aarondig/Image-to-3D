@@ -1,3 +1,27 @@
+import heic2any from 'heic2any';
+
+/**
+ * Convert HEIC/HEIF images to JPEG
+ */
+async function convertHeicToJpeg(file: File): Promise<File> {
+  try {
+    const convertedBlob = await heic2any({
+      blob: file,
+      toType: 'image/jpeg',
+      quality: 0.9,
+    });
+
+    // heic2any can return Blob or Blob[], handle both cases
+    const blob = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
+
+    return new File([blob], file.name.replace(/\.(heic|heif)$/i, '.jpg'), {
+      type: 'image/jpeg',
+    });
+  } catch (error) {
+    throw new Error('Failed to convert HEIC image. Please try a different image.');
+  }
+}
+
 /**
  * Resizes an image file to fit within maxDimension while maintaining aspect ratio
  * @param file - The image file to resize
@@ -8,6 +32,12 @@ export async function resizeImage(
   file: File,
   maxDimension: number
 ): Promise<string> {
+  // Convert HEIC to JPEG if needed
+  let processedFile = file;
+  if (file.type === 'image/heic' || file.type === 'image/heif' || file.name.toLowerCase().endsWith('.heic') || file.name.toLowerCase().endsWith('.heif')) {
+    processedFile = await convertHeicToJpeg(file);
+  }
+
   return new Promise((resolve, reject) => {
     const img = new Image();
     const canvas = document.createElement('canvas');
@@ -43,7 +73,7 @@ export async function resizeImage(
       URL.revokeObjectURL(img.src);
     };
 
-    img.src = URL.createObjectURL(file);
+    img.src = URL.createObjectURL(processedFile);
   });
 }
 
@@ -54,10 +84,26 @@ export async function resizeImage(
  * @returns Error message string if invalid, null if valid
  */
 export function validateImage(file: File, maxBytes: number): string | null {
-  const validTypes = ['image/jpeg', 'image/png'];
+  const validTypes = [
+    'image/jpeg',
+    'image/jpg',
+    'image/png',
+    'image/heic',
+    'image/heif',
+    'image/webp',
+  ];
 
-  if (!validTypes.includes(file.type)) {
-    return 'Please upload a JPG or PNG image';
+  // Check file extension for HEIC files (sometimes browser doesn't set correct MIME type)
+  const fileName = file.name.toLowerCase();
+  const hasValidExtension = fileName.endsWith('.jpg') ||
+                           fileName.endsWith('.jpeg') ||
+                           fileName.endsWith('.png') ||
+                           fileName.endsWith('.heic') ||
+                           fileName.endsWith('.heif') ||
+                           fileName.endsWith('.webp');
+
+  if (!validTypes.includes(file.type) && !hasValidExtension) {
+    return 'Please upload a JPG, PNG, HEIC, or WebP image';
   }
 
   if (file.size > maxBytes) {

@@ -96,7 +96,7 @@ export function ImageUpload({ onImageReady }: ImageUploadProps) {
                 or click to browse
               </p>
               <p className="text-xs text-muted-foreground/60 mt-2">
-                JPG or PNG • Max 2MB
+                JPG, PNG, HEIC, WebP • Max 10MB
               </p>
             </>
           )}
@@ -106,7 +106,7 @@ export function ImageUpload({ onImageReady }: ImageUploadProps) {
       <input
         id="file-input"
         type="file"
-        accept="image/jpeg,image/png"
+        accept="image/jpeg,image/jpg,image/png,image/heic,image/heif,image/webp"
         onChange={handleFileInput}
         className="hidden"
       />
