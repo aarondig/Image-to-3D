@@ -76,13 +76,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Extract base64 data without the data URL prefix (data:image/jpeg;base64,)
     const base64Data = image.includes(',') ? image.split(',')[1] : image;
 
+    // Log for debugging (remove after fixing)
+    console.log('Base64 data length:', base64Data.length);
+    console.log('First 50 chars:', base64Data.substring(0, 50));
+
     const payload = {
       type: 'image_to_model',
       file: {
-        type: 'png',
+        type: 'jpg',  // Changed from 'png' - try matching actual image type
         file_token: base64Data,
       },
     };
+
+    console.log('Payload:', JSON.stringify(payload).substring(0, 200));
 
     // Call Tripo API
     const tripoResponse = await fetch(`${tripoApiBase}/task`, {
