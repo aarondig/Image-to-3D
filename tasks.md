@@ -131,7 +131,7 @@ Single-photo to point cloud & full 3D mesh web app. Phased development with quic
 - [x] **COMMIT:** "Add ImageUpload component with preview"
 
 ### Task 1.7: StatusDisplay Component
-- [ ] 1.7.1: Create `src/components/StatusDisplay.tsx`:
+- [x] 1.7.1: Create `src/components/StatusDisplay.tsx`:
   ```typescript
   interface Props {
     status: JobStatus;
@@ -141,11 +141,11 @@ Single-photo to point cloud & full 3D mesh web app. Phased development with quic
     error?: string;
   }
   ```
-- [ ] 1.7.2: Show spinner for QUEUED/RUNNING
-- [ ] 1.7.3: Show progress bar (0-100%)
-- [ ] 1.7.4: Show download link when SUCCEEDED
-- [ ] 1.7.5: Show error message when FAILED/TIMEOUT
-- [ ] **COMMIT:** "Add StatusDisplay component"
+- [x] 1.7.2: Show spinner for QUEUED/RUNNING
+- [x] 1.7.3: Show progress bar (0-100%)
+- [x] 1.7.4: Show download link when SUCCEEDED
+- [x] 1.7.5: Show error message when FAILED/TIMEOUT
+- [x] **COMMIT:** "Add StatusDisplay component"
 
 ### Task 1.8: Backend API - create-mesh
 - [ ] 1.8.1: Create `api/create-mesh.ts` (Vercel serverless function):
