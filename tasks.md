@@ -233,17 +233,20 @@ Single-photo to point cloud & full 3D mesh web app. Phased development with quic
 - [x] **COMMIT:** "Fix bugs found in local testing"
 
 ### Task 1.13: Vercel Deployment
-- [ ] 1.13.1: Run `npm install -g vercel` (if not installed)
-- [ ] 1.13.2: Run `vercel login`
-- [ ] 1.13.3: Run `vercel` to create project
-- [ ] 1.13.4: Add environment variables in Vercel dashboard:
+- [x] 1.13.1: Run `npm install -g vercel` (if not installed)
+- [x] 1.13.2: Run `vercel login`
+- [x] 1.13.3: Run `vercel` to create project
+- [x] 1.13.4: Add environment variables in Vercel dashboard:
   - `TRIPO_API_KEY`
   - `TRIPO_API_BASE`
-- [ ] 1.13.5: Run `vercel --prod`
-- [ ] 1.13.6: Test deployed URL end-to-end
-- [ ] **COMMIT:** "Deploy Phase 1 to Vercel"
+  - `ALLOWED_ORIGINS`
+- [x] 1.13.5: Run `vercel --prod`
+- [x] 1.13.6: Test deployed URL end-to-end (https://image-to-3d-zeta.vercel.app/)
+- [x] **COMMIT:** "Deploy Phase 1 to Vercel"
 
 ---
+
+- [ ] 1.13.7: Read through `SCREENS` and `PRD` files for user-journey context 
 
 ## Phase 2: Point Cloud Visualization (Day 2-3: 6-8 hours)
 **Goal:** Instant MiDaS point cloud viewer with controls
