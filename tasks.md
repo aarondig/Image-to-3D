@@ -68,7 +68,7 @@ Single-photo to point cloud & full 3D mesh web app. Phased development with quic
 - [x] **COMMIT:** "Add environment configuration"
 
 ### Task 1.4: TypeScript Types
-- [ ] 1.4.1: Create `src/types/api.ts`:
+- [x] 1.4.1: Create `src/types/api.ts`:
   ```typescript
   export type JobStatus = 'QUEUED' | 'RUNNING' | 'SUCCEEDED' | 'FAILED' | 'TIMEOUT';
 
@@ -100,10 +100,10 @@ Single-photo to point cloud & full 3D mesh web app. Phased development with quic
     error?: string;
   }
   ```
-- [ ] **COMMIT:** "Add TypeScript API types"
+- [x] **COMMIT:** "Add TypeScript API types"
 
 ### Task 1.5: Image Processing Utilities
-- [ ] 1.5.1: Create `src/utils/imageProcessing.ts`:
+- [x] 1.5.1: Create `src/utils/imageProcessing.ts`:
   ```typescript
   export async function resizeImage(file: File, maxDimension: number): Promise<string> {
     // Canvas-based resize logic
@@ -114,9 +114,9 @@ Single-photo to point cloud & full 3D mesh web app. Phased development with quic
     // Return error message or null if valid
   }
   ```
-- [ ] 1.5.2: Implement canvas resize to maintain aspect ratio
-- [ ] 1.5.3: Implement JPEG/PNG validation and size check
-- [ ] **COMMIT:** "Add image processing utilities"
+- [x] 1.5.2: Implement canvas resize to maintain aspect ratio
+- [x] 1.5.3: Implement JPEG/PNG validation and size check
+- [x] **COMMIT:** "Add image processing utilities"
 
 ### Task 1.6: ImageUpload Component
 - [ ] 1.6.1: Create `src/components/ImageUpload.tsx` with:
