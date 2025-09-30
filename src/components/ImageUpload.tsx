@@ -1,6 +1,9 @@
 import { useState, useCallback } from 'react';
+import { Upload } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
 import { resizeImage, validateImage } from '../utils/imageProcessing';
 import { config } from '../config';
+import { cn } from '@/lib/utils';
 
 interface ImageUploadProps {
   onImageReady: (dataUrl: string) => void;
@@ -64,63 +67,58 @@ export function ImageUpload({ onImageReady }: ImageUploadProps) {
   }, [processFile]);
 
   return (
-    <div style={{ maxWidth: '500px', margin: '0 auto', textAlign: 'center' }}>
-      <div
+    <div className="w-full max-w-lg mx-auto">
+      <Card
+        className={cn(
+          'border-2 border-dashed cursor-pointer transition-all',
+          isDragging ? 'border-primary bg-accent' : 'border-muted-foreground/25',
+          'hover:border-primary/50'
+        )}
         onDrop={handleDrop}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
-        style={{
-          border: `2px dashed ${isDragging ? '#4a9eff' : '#333'}`,
-          borderRadius: '8px',
-          padding: '40px 20px',
-          background: isDragging ? '#1a1a2e' : '#0f0f0f',
-          cursor: 'pointer',
-          transition: 'all 0.2s',
-        }}
         onClick={() => document.getElementById('file-input')?.click()}
       >
-        {preview ? (
-          <img
-            src={preview}
-            alt="Preview"
-            style={{
-              maxWidth: '100%',
-              maxHeight: '300px',
-              borderRadius: '4px',
-            }}
-          />
-        ) : (
-          <>
-            <div style={{ fontSize: '48px', marginBottom: '16px' }}>📷</div>
-            <p style={{ color: '#aaa', marginBottom: '8px' }}>
-              {isDragging ? 'Drop image here' : 'Drag & drop an image'}
-            </p>
-            <p style={{ color: '#666', fontSize: '14px' }}>
-              or click to browse
-            </p>
-            <p style={{ color: '#555', fontSize: '12px', marginTop: '8px' }}>
-              JPG or PNG • Max 2MB
-            </p>
-          </>
-        )}
-      </div>
+        <CardContent className="flex flex-col items-center justify-center py-10">
+          {preview ? (
+            <img
+              src={preview}
+              alt="Preview"
+              className="max-w-full max-h-[300px] rounded-md"
+            />
+          ) : (
+            <>
+              <Upload className="h-12 w-12 text-muted-foreground mb-4" />
+              <p className="text-lg font-medium mb-2">
+                {isDragging ? 'Drop image here' : 'Drag & drop an image'}
+              </p>
+              <p className="text-sm text-muted-foreground mb-1">
+                or click to browse
+              </p>
+              <p className="text-xs text-muted-foreground/60 mt-2">
+                JPG or PNG • Max 2MB
+              </p>
+            </>
+          )}
+        </CardContent>
+      </Card>
 
       <input
         id="file-input"
         type="file"
         accept="image/jpeg,image/png"
         onChange={handleFileInput}
-        style={{ display: 'none' }}
+        className="hidden"
       />
 
       {isProcessing && (
-        <p style={{ color: '#4a9eff', marginTop: '16px' }}>
+        <p className="text-center text-primary mt-4 text-sm">
           Processing image...
         </p>
       )}
 
       {error && (
-        <p style={{ color: '#ff4a4a', marginTop: '16px' }}>
+        <p className="text-center text-destructive mt-4 text-sm">
           {error}
         </p>
       )}
