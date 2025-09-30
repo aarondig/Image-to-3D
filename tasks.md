@@ -183,7 +183,7 @@ Single-photo to point cloud & full 3D mesh web app. Phased development with quic
 - [x] **COMMIT:** "Add status polling API endpoint"
 
 ### Task 1.10: Polling Hook
-- [ ] 1.10.1: Create `src/hooks/useMeshJob.ts`:
+- [x] 1.10.1: Create `src/hooks/useMeshJob.ts`:
   ```typescript
   export function useMeshJob(taskId: string | null) {
     // useState for status, progress, asset, error
@@ -192,9 +192,9 @@ Single-photo to point cloud & full 3D mesh web app. Phased development with quic
     // Return { status, progress, asset, error, isLoading }
   }
   ```
-- [ ] 1.10.2: Implement exponential backoff after 60s (5s → 8s)
-- [ ] 1.10.3: Handle fetch errors gracefully (continue polling)
-- [ ] **COMMIT:** "Add polling hook for job status"
+- [x] 1.10.2: Implement exponential backoff after 60s (5s → 8s)
+- [x] 1.10.3: Handle fetch errors gracefully (continue polling)
+- [x] **COMMIT:** "Add polling hook for job status"
 
 ### Task 1.11: Main App Integration
 - [ ] 1.11.1: Update `src/App.tsx`:
