@@ -41,6 +41,9 @@ export function useMeshJob(taskId: string | null): MeshJobState {
       return;
     }
 
+    // Store taskId in a constant to narrow the type
+    const currentTaskId: string = taskId;
+
     let stopped = false;
     let pollInterval = config.pollIntervalMs; // Start at 5 seconds
     const startTime = Date.now();
@@ -52,7 +55,7 @@ export function useMeshJob(taskId: string | null): MeshJobState {
 
       try {
         const apiBaseUrl = config.apiBaseUrl || '';
-        const response = await fetch(`${apiBaseUrl}/api/status?id=${encodeURIComponent(taskId)}`);
+        const response = await fetch(`${apiBaseUrl}/api/status?id=${encodeURIComponent(currentTaskId)}`);
 
         if (!response.ok) {
           console.error('Status API error:', response.status);
