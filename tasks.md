@@ -49,13 +49,13 @@ Single-photo to point cloud & full 3D mesh web app. Phased development with quic
 - [x] **COMMIT:** "Add Three.js and R3F dependencies"
 
 ### Task 1.3: Environment Configuration
-- [ ] 1.3.1: Create `.env.local` with:
+- [x] 1.3.1: Create `.env.local` with:
   ```
   VITE_API_BASE_URL=http://localhost:5173
   TRIPO_API_KEY=your_key_here
   TRIPO_API_BASE=https://api.tripo3d.ai/v2/openapi
   ```
-- [ ] 1.3.2: Create `src/config.ts`:
+- [x] 1.3.2: Create `src/config.ts`:
   ```typescript
   export const config = {
     apiBaseUrl: import.meta.env.VITE_API_BASE_URL,
@@ -64,8 +64,8 @@ Single-photo to point cloud & full 3D mesh web app. Phased development with quic
     pollIntervalMs: 5000,
   };
   ```
-- [ ] 1.3.3: Add `.env.local` to `.gitignore`
-- [ ] **COMMIT:** "Add environment configuration"
+- [x] 1.3.3: Add `.env.local` to `.gitignore`
+- [x] **COMMIT:** "Add environment configuration"
 
 ### Task 1.4: TypeScript Types
 - [ ] 1.4.1: Create `src/types/api.ts`:

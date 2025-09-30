@@ -8,6 +8,7 @@ You are building a single-photo to 3D mesh web application with dual rendering m
 Tech stack: React + TypeScript + Vite + Three.js + Vercel
 
 ## Your Role
+- On first intialization, read through all files in the `./docs` directory
 - Execute tasks from `tasks.md` sequentially
 - Make a commit after completing each task using the provided commit message
 - Test code locally before committing
