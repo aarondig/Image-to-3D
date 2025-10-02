@@ -1,5 +1,5 @@
-import { Upload, Image as ImageIcon } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
+import { Upload } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useState, useCallback, useRef } from 'react';
@@ -75,53 +75,46 @@ export function UploadScreen({ onImageSelected }: UploadScreenProps) {
 
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.95 }}
-      transition={{ duration: 0.3 }}
-      className="flex flex-col items-center justify-center min-h-screen w-full px-4 py-8 sm:px-6 lg:px-8"
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -10 }}
+      transition={{ duration: 0.2 }}
+      className="flex min-h-svh w-full flex-col items-center px-4 pt-20"
     >
-      <div className="w-full max-w-xl space-y-6">
+      <div className="flex w-full max-w-md flex-col justify-center gap-6">
         {/* Header */}
-        <div className="text-center space-y-2">
-          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight">
+        <div className="flex flex-col gap-2 text-center">
+          <h1 className="text-2xl font-semibold tracking-tight">
             Photo to 3D
           </h1>
-          <p className="text-sm sm:text-base text-muted-foreground">
+          <p className="text-sm text-muted-foreground">
             Transform any photo into an interactive 3D model
           </p>
         </div>
 
         {/* Upload Card */}
-        <Card
-          className={cn(
-            'border-2 transition-all duration-200',
-            isDragging
-              ? 'border-primary bg-primary/5 scale-[1.02]'
-              : preview
-              ? 'border-border'
-              : 'border-dashed border-muted-foreground/25 hover:border-muted-foreground/50 cursor-pointer',
-          )}
-          onDrop={onDrop}
-          onDragOver={onDragOver}
-          onDragLeave={onDragLeave}
-          onClick={() => !preview && fileInputRef.current?.click()}
-        >
-          <CardContent className="p-8 sm:p-12">
+        <Card>
+          <CardHeader>
+            <CardTitle>Upload Image</CardTitle>
+            <CardDescription>
+              Drag and drop an image or click to browse
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
             {preview ? (
               /* Preview State */
-              <div className="space-y-6">
-                <div className="relative rounded-lg overflow-hidden bg-muted">
+              <div className="grid gap-4">
+                <div className="overflow-hidden rounded-md border bg-muted">
                   <img
                     src={preview}
                     alt="Preview"
-                    className="w-full h-auto max-h-[400px] object-contain"
+                    className="aspect-square w-full object-cover"
                   />
                 </div>
-                <div className="flex flex-col sm:flex-row gap-3">
+                <div className="grid gap-2">
                   <Button
-                    size="lg"
-                    className="flex-1"
+                    size="default"
+                    className="w-full"
                     onClick={(e) => {
                       e.stopPropagation();
                       handleGenerate();
@@ -130,8 +123,9 @@ export function UploadScreen({ onImageSelected }: UploadScreenProps) {
                     Generate 3D Model
                   </Button>
                   <Button
-                    size="lg"
+                    size="default"
                     variant="outline"
+                    className="w-full"
                     onClick={(e) => {
                       e.stopPropagation();
                       setPreview(null);
@@ -140,44 +134,35 @@ export function UploadScreen({ onImageSelected }: UploadScreenProps) {
                       }
                     }}
                   >
-                    Change
+                    Choose Different Image
                   </Button>
                 </div>
               </div>
             ) : (
               /* Empty State */
-              <div className="flex flex-col items-center text-center space-y-4">
-                <div className="relative">
-                  <div className="absolute inset-0 bg-primary/10 rounded-full blur-xl" />
-                  <div className="relative bg-primary/10 p-6 rounded-full">
-                    <Upload className="h-10 w-10 sm:h-12 sm:w-12 text-primary" />
-                  </div>
+              <div
+                className={cn(
+                  'grid gap-4 rounded-lg border-2 border-dashed p-6 text-center transition-colors',
+                  isDragging
+                    ? 'border-primary bg-primary/5'
+                    : 'border-muted-foreground/25 hover:border-muted-foreground/50 cursor-pointer'
+                )}
+                onDrop={onDrop}
+                onDragOver={onDragOver}
+                onDragLeave={onDragLeave}
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+                  <Upload className="h-5 w-5 text-muted-foreground" />
                 </div>
-
-                <div className="space-y-2">
-                  <p className="text-base sm:text-lg font-medium">
-                    Drop your photo here
+                <div className="grid gap-1">
+                  <p className="text-sm font-medium">
+                    Click to upload or drag and drop
                   </p>
-                  <p className="text-sm text-muted-foreground">
-                    or click to browse files
+                  <p className="text-xs text-muted-foreground">
+                    JPG, PNG, HEIC, WebP (max 10MB)
                   </p>
                 </div>
-
-                <Button
-                  size="lg"
-                  variant="outline"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    fileInputRef.current?.click();
-                  }}
-                >
-                  <ImageIcon className="mr-2 h-4 w-4" />
-                  Choose File
-                </Button>
-
-                <p className="text-xs text-muted-foreground pt-2">
-                  Supports JPG, PNG, HEIC, WebP • Max 10MB
-                </p>
               </div>
             )}
           </CardContent>

@@ -1,9 +1,8 @@
 import { motion } from 'framer-motion';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Loader2, Sparkles } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 
 interface ProcessingScreenProps {
   image: string;
@@ -16,66 +15,54 @@ export function ProcessingScreen({ image, progress, status }: ProcessingScreenPr
 
   return (
     <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.3 }}
-      className="flex flex-col items-center justify-center min-h-screen w-full px-4 py-8 sm:px-6 lg:px-8"
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -10 }}
+      transition={{ duration: 0.2 }}
+      className="flex min-h-svh w-full flex-col items-center px-4 pt-20"
     >
-      <div className="w-full max-w-2xl space-y-6">
-        {/* Status Badge */}
-        <div className="flex justify-center">
-          <Badge variant="secondary" className="px-4 py-2 text-sm">
-            <Sparkles className="mr-2 h-4 w-4" />
-            Generating 3D Model
-          </Badge>
-        </div>
-
+      <div className="flex w-full max-w-lg flex-col justify-center gap-6">
         {/* Main Processing Card */}
         <Card>
-          <CardHeader className="pb-3">
-            <div className="flex items-center gap-3">
-              <div className="h-12 w-12 sm:h-16 sm:w-16 rounded-lg overflow-hidden bg-muted flex-shrink-0">
+          <CardHeader>
+            <div className="flex items-start gap-4">
+              <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-md border bg-muted">
                 <img
                   src={image}
                   alt="Processing"
                   className="h-full w-full object-cover"
                 />
               </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <Loader2 className="h-4 w-4 animate-spin text-primary flex-shrink-0" />
-                  <p className="text-sm sm:text-base font-medium truncate">{status}</p>
-                </div>
-                <p className="text-xs sm:text-sm text-muted-foreground">
+              <div className="grid gap-1">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  {status}
+                </CardTitle>
+                <CardDescription>
                   This usually takes 30-90 seconds
-                </p>
+                </CardDescription>
               </div>
             </div>
           </CardHeader>
 
-          <CardContent className="space-y-3">
+          <CardContent className="grid gap-6">
             {/* Progress Bar */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-xs sm:text-sm">
+            <div className="grid gap-2">
+              <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">Progress</span>
                 <span className="font-medium">{progressPercent}%</span>
               </div>
-              <Progress value={progressPercent} className="h-2" />
+              <Progress value={progressPercent} />
             </div>
 
             {/* 3D Preview Placeholder */}
-            <div className="pt-4">
-              <div className="aspect-square w-full rounded-lg overflow-hidden bg-muted/50 relative">
-                <div className="absolute inset-0 flex flex-col items-center justify-center space-y-4 p-6">
-                  <Skeleton className="h-24 w-24 sm:h-32 sm:w-32 rounded-lg" />
-                  <div className="space-y-2 w-full max-w-[200px]">
-                    <Skeleton className="h-3 w-full" />
-                    <Skeleton className="h-3 w-3/4 mx-auto" />
-                  </div>
+            <div className="aspect-square w-full overflow-hidden rounded-md border bg-muted/30">
+              <div className="flex h-full flex-col items-center justify-center gap-4 p-6">
+                <Skeleton className="h-24 w-24 rounded-md" />
+                <div className="grid w-full max-w-[200px] gap-2">
+                  <Skeleton className="h-3 w-full" />
+                  <Skeleton className="h-3 w-3/4" />
                 </div>
-                {/* Shimmer effect */}
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-background/10 to-transparent animate-shimmer" />
               </div>
             </div>
           </CardContent>

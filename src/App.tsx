@@ -73,38 +73,36 @@ function App() {
   }
 
   return (
-    <div className="relative w-full min-h-screen overflow-hidden bg-background">
-      <AnimatePresence mode="wait">
-        {screen === 'UPLOAD' && (
-          <UploadScreen key="upload" onImageSelected={handleImageSelected} />
-        )}
+    <AnimatePresence mode="wait">
+      {screen === 'UPLOAD' && (
+        <UploadScreen key="upload" onImageSelected={handleImageSelected} />
+      )}
 
-        {screen === 'PROCESSING' && imageDataUrl && (
-          <ProcessingScreen
-            key="processing"
-            image={imageDataUrl}
-            progress={jobStatus.progress}
-            status={jobStatus.message || 'Processing...'}
-          />
-        )}
+      {screen === 'PROCESSING' && imageDataUrl && (
+        <ProcessingScreen
+          key="processing"
+          image={imageDataUrl}
+          progress={jobStatus.progress}
+          status={jobStatus.message || 'Processing...'}
+        />
+      )}
 
-        {screen === 'MESH_VIEWER' && jobStatus.asset?.url && (
-          <MeshViewerScreen
-            key="mesh-viewer"
-            modelUrl={jobStatus.asset.url}
-            onUploadAnother={handleReset}
-          />
-        )}
+      {screen === 'MESH_VIEWER' && jobStatus.asset?.url && (
+        <MeshViewerScreen
+          key="mesh-viewer"
+          modelUrl={jobStatus.asset.url}
+          onUploadAnother={handleReset}
+        />
+      )}
 
-        {screen === 'ERROR' && (
-          <ErrorScreen
-            key="error"
-            error={jobStatus.error || 'Failed to generate 3D model'}
-            onRetry={handleReset}
-          />
-        )}
-      </AnimatePresence>
-    </div>
+      {screen === 'ERROR' && (
+        <ErrorScreen
+          key="error"
+          error={jobStatus.error || 'Failed to generate 3D model'}
+          onRetry={handleReset}
+        />
+      )}
+    </AnimatePresence>
   );
 }
 
