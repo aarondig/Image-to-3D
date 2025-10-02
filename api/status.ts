@@ -44,17 +44,34 @@ function normalizeStatus(tripoStatus: string): JobStatus {
  * Normalize Tripo API response to our standard format
  */
 function normalizeResponse(tripoData: any) {
-  const status = normalizeStatus(tripoData.data?.status || tripoData.status || 'running');
-  const progress = tripoData.data?.progress ?? (status === 'SUCCEEDED' ? 1.0 : 0.0);
+  console.log('Raw Tripo response:', JSON.stringify(tripoData));
 
-  // Extract asset information
+  const status = normalizeStatus(tripoData.data?.status || tripoData.status || 'running');
+
+  // Tripo sends progress as 0-100, convert to 0-1
+  let rawProgress = tripoData.data?.progress ?? (status === 'SUCCEEDED' ? 100 : 0);
+  const progress = rawProgress > 1 ? rawProgress / 100 : rawProgress;
+
+  console.log('Status:', status, 'Raw progress:', rawProgress, 'Normalized:', progress);
+
+  // Extract asset information - check multiple possible locations
   let asset = null;
-  if (status === 'SUCCEEDED' && tripoData.data?.output?.model) {
-    asset = {
-      url: tripoData.data.output.model,
-      format: 'glb',
-      sizeBytes: 0, // Tripo doesn't provide size in the response
-    };
+  if (status === 'SUCCEEDED') {
+    const modelUrl = tripoData.data?.output?.model ||
+                     tripoData.data?.result?.model ||
+                     tripoData.data?.model ||
+                     tripoData.output?.model;
+
+    if (modelUrl) {
+      asset = {
+        url: modelUrl,
+        format: 'glb',
+        sizeBytes: 0,
+      };
+      console.log('Asset found:', modelUrl);
+    } else {
+      console.log('No asset URL found in response');
+    }
   }
 
   return {
