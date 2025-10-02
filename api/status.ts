@@ -57,8 +57,10 @@ function normalizeResponse(tripoData: any) {
   // Extract asset information - check multiple possible locations
   let asset = null;
   if (status === 'SUCCEEDED') {
-    const modelUrl = tripoData.data?.output?.model ||
+    const modelUrl = tripoData.data?.result?.pbr_model?.url ||
+                     tripoData.data?.output?.pbr_model ||
                      tripoData.data?.result?.model ||
+                     tripoData.data?.output?.model ||
                      tripoData.data?.model ||
                      tripoData.output?.model;
 
