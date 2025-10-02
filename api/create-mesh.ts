@@ -91,13 +91,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     console.log('Uploading image, size:', imageBuffer.length, 'bytes');
 
     // Call Tripo API with multipart form data
+    // Note: FormData stream needs to be properly buffered for fetch
     const tripoResponse = await fetch(`${tripoApiBase}/task`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${tripoApiKey}`,
         ...formData.getHeaders(),
       },
-      body: formData,
+      body: formData.getBuffer(),
     });
 
     if (!tripoResponse.ok) {
