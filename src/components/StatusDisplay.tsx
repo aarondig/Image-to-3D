@@ -1,8 +1,8 @@
-import { CheckCircle2, XCircle, Loader2, Clock, Download } from 'lucide-react';
+import { CheckCircle2, XCircle, Loader2, Clock } from 'lucide-react';
 import type { JobStatus } from '../types/api';
 import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { Button } from '@/components/ui/button';
+import { ModelViewer } from './ModelViewer';
 import { cn } from '@/lib/utils';
 
 interface StatusDisplayProps {
@@ -101,14 +101,11 @@ export function StatusDisplay({
             </p>
           )}
 
-          {/* Download button */}
+          {/* 3D Model Viewer */}
           {status === 'SUCCEEDED' && assetUrl && (
-            <Button asChild size="lg" className="mt-4">
-              <a href={assetUrl} download>
-                <Download className="mr-2 h-4 w-4" />
-                Download Mesh
-              </a>
-            </Button>
+            <div className="w-full mt-4">
+              <ModelViewer modelUrl={assetUrl} />
+            </div>
           )}
 
           {/* Error message */}
