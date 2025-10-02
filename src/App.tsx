@@ -1,26 +1,41 @@
 import { useState } from 'react';
-import { Loader2, RotateCcw } from 'lucide-react';
-import { ImageUpload } from './components/ImageUpload';
-import { StatusDisplay } from './components/StatusDisplay';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { AnimatePresence } from 'framer-motion';
+import { UploadScreen } from './screens/UploadScreen';
+import { ProcessingScreen } from './screens/ProcessingScreen';
+import { MeshViewerScreen } from './screens/MeshViewerScreen';
+import { ErrorScreen } from './screens/ErrorScreen';
 import { useMeshJob } from './hooks/useMeshJob';
 import { config } from './config';
-import type { CreateMeshResponse } from './types/api';
+import type { CreateMeshResponse, JobStatus } from './types/api';
+import type { Screen } from './types/screens';
 
 function App() {
+  const [screen, setScreen] = useState<Screen>('UPLOAD');
   const [imageDataUrl, setImageDataUrl] = useState<string | null>(null);
   const [taskId, setTaskId] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitError, setSubmitError] = useState<string | null>(null);
 
   // Poll job status when taskId is available
   const jobStatus = useMeshJob(taskId);
 
-  async function handleImageReady(dataUrl: string) {
+  // Auto-transition screens based on job status
+  const handleStatusChange = (status: JobStatus, assetUrl?: string) => {
+    if (status === 'RUNNING' || status === 'QUEUED') {
+      setScreen('PROCESSING');
+    } else if (status === 'SUCCEEDED' && assetUrl) {
+      setScreen('MESH_VIEWER');
+    } else if (status === 'FAILED' || status === 'TIMEOUT') {
+      setScreen('ERROR');
+    }
+  };
+
+  // Watch for job status changes
+  if (jobStatus.status !== 'IDLE') {
+    handleStatusChange(jobStatus.status, jobStatus.asset?.url);
+  }
+
+  async function handleImageSelected(dataUrl: string) {
     setImageDataUrl(dataUrl);
-    setSubmitError(null);
-    setIsSubmitting(true);
+    setScreen('PROCESSING');
 
     try {
       const apiBaseUrl = config.apiBaseUrl || '';
@@ -47,82 +62,48 @@ function App() {
       setTaskId(data.taskId);
     } catch (error) {
       console.error('Error submitting image:', error);
-      setSubmitError(
-        error instanceof Error ? error.message : 'Failed to submit image'
-      );
-    } finally {
-      setIsSubmitting(false);
+      setScreen('ERROR');
     }
   }
 
   function handleReset() {
+    setScreen('UPLOAD');
     setImageDataUrl(null);
     setTaskId(null);
-    setIsSubmitting(false);
-    setSubmitError(null);
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center px-4 py-10">
-      <div className="w-full max-w-2xl space-y-8">
-        {/* Header */}
-        <div className="text-center space-y-2">
-          <h1 className="text-4xl font-bold tracking-tight">
-            Photo to 3D Mesh
-          </h1>
-          <p className="text-muted-foreground">
-            Upload a photo to generate a 3D model
-          </p>
-        </div>
-
-        {/* Upload Section */}
-        {!imageDataUrl && <ImageUpload onImageReady={handleImageReady} />}
-
-        {/* Submitting State */}
-        {isSubmitting && (
-          <div className="flex items-center justify-center gap-2 text-primary">
-            <Loader2 className="h-4 w-4 animate-spin" />
-            <p className="text-sm">Submitting to mesh generator...</p>
-          </div>
+    <div className="relative w-full min-h-screen overflow-hidden bg-background">
+      <AnimatePresence mode="wait">
+        {screen === 'UPLOAD' && (
+          <UploadScreen key="upload" onImageSelected={handleImageSelected} />
         )}
 
-        {/* Submit Error */}
-        {submitError && (
-          <Card className="border-destructive">
-            <CardContent className="pt-6 space-y-4">
-              <p className="text-sm text-destructive text-center">
-                {submitError}
-              </p>
-              <div className="flex justify-center">
-                <Button onClick={handleReset} variant="outline">
-                  <RotateCcw className="mr-2 h-4 w-4" />
-                  Try Again
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+        {screen === 'PROCESSING' && imageDataUrl && (
+          <ProcessingScreen
+            key="processing"
+            image={imageDataUrl}
+            progress={jobStatus.progress}
+            status={jobStatus.message || 'Processing...'}
+          />
         )}
 
-        {/* Status Display */}
-        {imageDataUrl && taskId && !submitError && (
-          <div className="space-y-6">
-            <StatusDisplay
-              status={jobStatus.status === 'IDLE' ? 'QUEUED' : jobStatus.status}
-              progress={jobStatus.progress}
-              message={jobStatus.message}
-              assetUrl={jobStatus.asset?.url}
-              error={jobStatus.error || undefined}
-            />
-
-            <div className="flex justify-center">
-              <Button onClick={handleReset} variant="secondary">
-                <RotateCcw className="mr-2 h-4 w-4" />
-                Upload Another
-              </Button>
-            </div>
-          </div>
+        {screen === 'MESH_VIEWER' && jobStatus.asset?.url && (
+          <MeshViewerScreen
+            key="mesh-viewer"
+            modelUrl={jobStatus.asset.url}
+            onUploadAnother={handleReset}
+          />
         )}
-      </div>
+
+        {screen === 'ERROR' && (
+          <ErrorScreen
+            key="error"
+            error={jobStatus.error || 'Failed to generate 3D model'}
+            onRetry={handleReset}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }
