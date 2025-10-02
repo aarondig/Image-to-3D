@@ -74,31 +74,59 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(500).json({ error: 'Server configuration error' });
     }
 
-    // Extract base64 data without the data URL prefix (data:image/jpeg;base64,)
+    // Try approach: Upload image first, then create task
+    // Step 1: Upload the image to get a token
     const base64Data = image.includes(',') ? image.split(',')[1] : image;
-
-    // Convert base64 to buffer
     const imageBuffer = Buffer.from(base64Data, 'base64');
-
-    // Create form data with the image file
-    const formData = new FormData();
-    formData.append('file', imageBuffer, {
-      filename: 'image.jpg',
-      contentType: 'image/jpeg',
-    });
-    formData.append('type', 'image_to_model');
 
     console.log('Uploading image, size:', imageBuffer.length, 'bytes');
 
-    // Call Tripo API with multipart form data
-    // Note: FormData stream needs to be properly buffered for fetch
+    // Upload to get file token
+    const uploadFormData = new FormData();
+    uploadFormData.append('file', imageBuffer, {
+      filename: 'image.jpg',
+      contentType: 'image/jpeg',
+    });
+
+    const uploadResponse = await fetch(`${tripoApiBase}/upload`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${tripoApiKey}`,
+        ...uploadFormData.getHeaders(),
+      },
+      body: uploadFormData.getBuffer(),
+    });
+
+    if (!uploadResponse.ok) {
+      const errorText = await uploadResponse.text();
+      console.error('Upload error:', uploadResponse.status, errorText);
+      return res.status(500).json({
+        error: 'Image upload failed',
+        detail: errorText,
+      });
+    }
+
+    const uploadData = await uploadResponse.json();
+    const fileToken = uploadData.data?.image_token || uploadData.image_token;
+
+    console.log('File uploaded, token:', fileToken);
+
+    // Step 2: Create image_to_model task with the token
+    const taskPayload = {
+      type: 'image_to_model',
+      file: {
+        type: 'jpg',
+        file_token: fileToken,
+      },
+    };
+
     const tripoResponse = await fetch(`${tripoApiBase}/task`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${tripoApiKey}`,
-        ...formData.getHeaders(),
+        'Content-Type': 'application/json',
       },
-      body: formData.getBuffer(),
+      body: JSON.stringify(taskPayload),
     });
 
     if (!tripoResponse.ok) {
