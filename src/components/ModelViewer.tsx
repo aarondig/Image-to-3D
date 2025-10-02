@@ -9,7 +9,9 @@ interface ModelViewerProps {
 }
 
 function Model({ url }: { url: string }) {
-  const { scene } = useGLTF(url);
+  // Proxy the URL through our server to bypass CORS
+  const proxyUrl = `/api/proxy-model?url=${encodeURIComponent(url)}`;
+  const { scene } = useGLTF(proxyUrl);
   return (
     <Center>
       <primitive object={scene} />
