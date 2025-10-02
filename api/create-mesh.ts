@@ -1,4 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import FormData from 'form-data';
 
 /**
  * Enable CORS for the API endpoint
@@ -76,28 +77,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Extract base64 data without the data URL prefix (data:image/jpeg;base64,)
     const base64Data = image.includes(',') ? image.split(',')[1] : image;
 
-    // Log for debugging (remove after fixing)
-    console.log('Base64 data length:', base64Data.length);
-    console.log('First 50 chars:', base64Data.substring(0, 50));
+    // Convert base64 to buffer
+    const imageBuffer = Buffer.from(base64Data, 'base64');
 
-    const payload = {
-      type: 'image_to_model',
-      file: {
-        type: 'jpg',  // Changed from 'png' - try matching actual image type
-        file_token: base64Data,
-      },
-    };
+    // Create form data with the image file
+    const formData = new FormData();
+    formData.append('file', imageBuffer, {
+      filename: 'image.jpg',
+      contentType: 'image/jpeg',
+    });
+    formData.append('type', 'image_to_model');
 
-    console.log('Payload:', JSON.stringify(payload).substring(0, 200));
+    console.log('Uploading image, size:', imageBuffer.length, 'bytes');
 
-    // Call Tripo API
+    // Call Tripo API with multipart form data
     const tripoResponse = await fetch(`${tripoApiBase}/task`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${tripoApiKey}`,
-        'Content-Type': 'application/json',
+        ...formData.getHeaders(),
       },
-      body: JSON.stringify(payload),
+      body: formData,
     });
 
     if (!tripoResponse.ok) {
