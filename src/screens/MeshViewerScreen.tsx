@@ -110,8 +110,8 @@ export function MeshViewerScreen({
       {/* Preload model */}
       <PreloadModel url={modelUrl} />
 
-      {/* Full-screen 3D Canvas Background */}
-      <div className="fixed inset-0 -z-10">
+      {/* Full-screen 3D Canvas */}
+      <div className="absolute inset-0">
         <ErrorBoundary FallbackComponent={ErrorFallback}>
           <Canvas camera={{ position: [0, 0, 5], fov: 50 }}>
             <ambientLight intensity={0.5} />
@@ -132,8 +132,8 @@ export function MeshViewerScreen({
         </ErrorBoundary>
       </div>
 
-      {/* Content Overlay - Top aligned, horizontally centered */}
-      <div className="pointer-events-none flex min-h-full w-full flex-col items-center px-4 pt-6 md:px-6">
+      {/* Content Overlay - Absolute positioned at top */}
+      <div className="pointer-events-none absolute left-0 right-0 top-0 flex justify-center px-4 pt-6 md:px-6">
         <Card className="pointer-events-auto w-full max-w-2xl bg-background/80 backdrop-blur-md">
           <div className="flex items-center justify-between p-4">
             <div className="flex items-center gap-2">
