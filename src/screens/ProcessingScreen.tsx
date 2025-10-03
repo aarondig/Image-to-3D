@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Loader2 } from 'lucide-react';
+import { safeHref } from '@/lib/safeUrl';
 
 interface ProcessingScreenProps {
   image: string;
@@ -27,11 +28,13 @@ export function ProcessingScreen({ image, progress, status }: ProcessingScreenPr
           <CardHeader>
             <div className="flex items-start gap-4">
               <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-md border bg-muted">
-                <img
-                  src={image}
-                  alt="Processing"
-                  className="h-full w-full object-cover"
-                />
+                {safeHref(image) && (
+                  <img
+                    src={safeHref(image)}
+                    alt="Processing"
+                    className="h-full w-full object-cover"
+                  />
+                )}
               </div>
               <div className="grid gap-1">
                 <CardTitle className="flex items-center gap-2 text-base">

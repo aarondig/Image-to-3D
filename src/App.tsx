@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { UploadScreen } from './screens/UploadScreen';
 import { ProcessingScreen } from './screens/ProcessingScreen';
@@ -6,7 +6,7 @@ import { MeshViewerScreen } from './screens/MeshViewerScreen';
 import { ErrorScreen } from './screens/ErrorScreen';
 import { useMeshJob } from './hooks/useMeshJob';
 import { config } from './config';
-import type { CreateMeshResponse, JobStatus } from './types/api';
+import type { CreateMeshResponse } from './types/api';
 import type { Screen } from './types/screens';
 
 function App() {
@@ -17,23 +17,39 @@ function App() {
   // Poll job status when taskId is available
   const jobStatus = useMeshJob(taskId);
 
-  // Auto-transition screens based on job status
-  const handleStatusChange = (status: JobStatus, assetUrl?: string) => {
-    if (status === 'RUNNING' || status === 'QUEUED') {
-      setScreen('PROCESSING');
-    } else if (status === 'SUCCEEDED' && assetUrl) {
-      setScreen('MESH_VIEWER');
-    } else if (status === 'FAILED' || status === 'TIMEOUT') {
-      setScreen('ERROR');
-    }
-  };
+  // Auto-transition screens based on job status (using useEffect to avoid render-time state updates)
+  useEffect(() => {
+    const status = jobStatus.status;
+    const assetUrl = jobStatus.asset?.url;
 
-  // Watch for job status changes
-  if (jobStatus.status !== 'IDLE') {
-    handleStatusChange(jobStatus.status, jobStatus.asset?.url);
-  }
+    console.log('App: Job status changed', { status, assetUrl, currentScreen: screen });
+
+    if (status === 'RUNNING' || status === 'QUEUED') {
+      if (screen !== 'PROCESSING') {
+        console.log('App: Transitioning to PROCESSING');
+        setScreen('PROCESSING');
+      }
+    } else if (status === 'SUCCEEDED' && assetUrl) {
+      if (screen !== 'MESH_VIEWER') {
+        console.log('App: Transitioning to MESH_VIEWER with URL', assetUrl);
+        setScreen('MESH_VIEWER');
+      }
+    } else if (status === 'FAILED' || status === 'TIMEOUT') {
+      if (screen !== 'ERROR') {
+        console.log('App: Transitioning to ERROR');
+        setScreen('ERROR');
+      }
+    }
+  }, [jobStatus.status, jobStatus.asset?.url, screen]);
 
   async function handleImageSelected(dataUrl: string) {
+    // Guard: Validate dataUrl before processing
+    if (!dataUrl || typeof dataUrl !== 'string' || dataUrl.trim() === '') {
+      console.error('App: Invalid image data URL');
+      setScreen('ERROR');
+      return;
+    }
+
     setImageDataUrl(dataUrl);
     setScreen('PROCESSING');
 
@@ -87,13 +103,20 @@ function App() {
         />
       )}
 
-      {screen === 'MESH_VIEWER' && jobStatus.asset?.url && (
+      {screen === 'MESH_VIEWER' && jobStatus.asset?.url ? (
         <MeshViewerScreen
           key="mesh-viewer"
           modelUrl={jobStatus.asset.url}
           onUploadAnother={handleReset}
         />
-      )}
+      ) : screen === 'MESH_VIEWER' ? (
+        /* If we're on MESH_VIEWER screen but no URL, show error */
+        <ErrorScreen
+          key="error-no-url"
+          error="No model URL available"
+          onRetry={handleReset}
+        />
+      ) : null}
 
       {screen === 'ERROR' && (
         <ErrorScreen

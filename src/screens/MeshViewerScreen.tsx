@@ -1,10 +1,12 @@
-import { Suspense, useState } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Environment, useGLTF, Center } from '@react-three/drei';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Download, Upload, Pause, Play } from 'lucide-react';
+import { ErrorBoundary } from 'react-error-boundary';
+import { safeHref } from '@/lib/safeUrl';
 
 interface MeshViewerScreenProps {
   modelUrl: string;
@@ -12,18 +14,48 @@ interface MeshViewerScreenProps {
 }
 
 function Model({ url }: { url: string }) {
-  const proxyUrl = `/api/proxy-model?url=${encodeURIComponent(url)}`;
-  const { scene } = useGLTF(proxyUrl);
-
-  if (!scene) {
+  // Guard: Don't even try to load if URL is invalid
+  if (!url || typeof url !== 'string' || url.trim() === '') {
+    console.error('Model: Invalid URL provided', url);
     return <Loader />;
   }
+
+  const proxyUrl = `/api/proxy-model?url=${encodeURIComponent(url)}`;
+  console.log('Model: Loading from proxyUrl', proxyUrl);
+
+  let gltf;
+  try {
+    gltf = useGLTF(proxyUrl);
+    console.log('Model: GLTF loaded', { hasGltf: !!gltf, hasScene: !!gltf?.scene, scene: gltf?.scene });
+  } catch (error) {
+    console.error('Model: useGLTF threw error', error);
+    throw error; // Re-throw to be caught by ErrorBoundary
+  }
+
+  if (!gltf || !gltf.scene) {
+    console.error('GLTF scene is undefined', { gltf, hasGltf: !!gltf });
+    return <Loader />;
+  }
+
+  // Extra safety: Clone the scene to avoid reference issues
+  const scene = gltf.scene.clone();
 
   return (
     <Center>
       <primitive object={scene} />
     </Center>
   );
+}
+
+// Preload the model to avoid issues
+function PreloadModel({ url }: { url: string }) {
+  const proxyUrl = `/api/proxy-model?url=${encodeURIComponent(url)}`;
+
+  useEffect(() => {
+    useGLTF.preload(proxyUrl);
+  }, [proxyUrl]);
+
+  return null;
 }
 
 function Loader() {
@@ -35,11 +67,37 @@ function Loader() {
   );
 }
 
+function ErrorFallback({ error }: { error: Error }) {
+  return (
+    <div className="flex h-full w-full items-center justify-center">
+      <div className="rounded-lg border border-destructive bg-destructive/10 p-4 text-center">
+        <p className="text-sm text-destructive">Failed to load 3D model</p>
+        <p className="mt-1 text-xs text-muted-foreground">{error.message}</p>
+      </div>
+    </div>
+  );
+}
+
 export function MeshViewerScreen({
   modelUrl,
   onUploadAnother,
 }: MeshViewerScreenProps) {
   const [autoRotate, setAutoRotate] = useState(true);
+
+  // Guard: Don't render if modelUrl is invalid
+  if (!modelUrl || typeof modelUrl !== 'string' || modelUrl.trim() === '') {
+    console.error('MeshViewerScreen: Invalid modelUrl', modelUrl);
+    return (
+      <div className="flex h-svh w-full items-center justify-center">
+        <div className="rounded-lg border border-destructive bg-destructive/10 p-4 text-center">
+          <p className="text-sm text-destructive">Invalid model URL</p>
+          <Button onClick={onUploadAnother} className="mt-4">Upload Another</Button>
+        </div>
+      </div>
+    );
+  }
+
+  console.log('MeshViewerScreen: Rendering with modelUrl', modelUrl);
 
   return (
     <motion.div
@@ -49,24 +107,29 @@ export function MeshViewerScreen({
       transition={{ duration: 0.2 }}
       className="relative h-svh w-full"
     >
+      {/* Preload model */}
+      <PreloadModel url={modelUrl} />
+
       {/* Full-screen 3D Canvas Background */}
       <div className="fixed inset-0 -z-10">
-        <Canvas camera={{ position: [0, 0, 5], fov: 50 }}>
-          <ambientLight intensity={0.5} />
-          <directionalLight position={[10, 10, 5]} intensity={1} />
-          <Suspense fallback={<Loader />}>
-            <Model url={modelUrl} />
+        <ErrorBoundary FallbackComponent={ErrorFallback}>
+          <Canvas camera={{ position: [0, 0, 5], fov: 50 }}>
+            <ambientLight intensity={0.5} />
+            <directionalLight position={[10, 10, 5]} intensity={1} />
+            <Suspense fallback={<Loader />}>
+              <Model url={modelUrl} />
+            </Suspense>
             <Environment preset="city" />
-          </Suspense>
-          <OrbitControls
-            autoRotate={autoRotate}
-            autoRotateSpeed={2}
-            enableDamping
-            dampingFactor={0.05}
-            minDistance={2}
-            maxDistance={10}
-          />
-        </Canvas>
+            <OrbitControls
+              autoRotate={autoRotate}
+              autoRotateSpeed={2}
+              enableDamping
+              dampingFactor={0.05}
+              minDistance={2}
+              maxDistance={10}
+            />
+          </Canvas>
+        </ErrorBoundary>
       </div>
 
       {/* Content Overlay - Top aligned, horizontally centered */}
@@ -96,13 +159,15 @@ export function MeshViewerScreen({
                   {autoRotate ? 'Pause rotation' : 'Play rotation'}
                 </span>
               </Button>
-              <Button asChild variant="default" size="sm">
-                <a href={modelUrl} download>
-                  <Download className="mr-2 h-4 w-4" />
-                  <span className="hidden sm:inline">Download</span>
-                  <span className="sm:hidden">Save</span>
-                </a>
-              </Button>
+              {safeHref(modelUrl) && (
+                <Button asChild variant="default" size="sm">
+                  <a href={safeHref(modelUrl)} download>
+                    <Download className="mr-2 h-4 w-4" />
+                    <span className="hidden sm:inline">Download</span>
+                    <span className="sm:hidden">Save</span>
+                  </a>
+                </Button>
+              )}
               <Button variant="outline" size="sm" onClick={onUploadAnother}>
                 <Upload className="mr-2 h-4 w-4" />
                 <span className="hidden sm:inline">New Upload</span>

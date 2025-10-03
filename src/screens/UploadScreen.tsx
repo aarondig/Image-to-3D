@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useState, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
+import { safeHref } from '@/lib/safeUrl';
 
 interface UploadScreenProps {
   onImageSelected: (imageData: string) => void;
@@ -105,11 +106,13 @@ export function UploadScreen({ onImageSelected }: UploadScreenProps) {
               /* Preview State */
               <div className="grid gap-4">
                 <div className="overflow-hidden rounded-md border bg-muted">
-                  <img
-                    src={preview}
-                    alt="Preview"
-                    className="aspect-square w-full object-cover"
-                  />
+                  {safeHref(preview) && (
+                    <img
+                      src={safeHref(preview)}
+                      alt="Preview"
+                      className="aspect-square w-full object-cover"
+                    />
+                  )}
                 </div>
                 <div className="grid gap-2">
                   <Button

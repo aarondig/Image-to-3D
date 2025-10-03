@@ -4,6 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { resizeImage, validateImage } from '../utils/imageProcessing';
 import { config } from '../config';
 import { cn } from '@/lib/utils';
+import { safeHref } from '@/lib/safeUrl';
 
 interface ImageUploadProps {
   onImageReady: (dataUrl: string) => void;
@@ -80,9 +81,9 @@ export function ImageUpload({ onImageReady }: ImageUploadProps) {
         onClick={() => document.getElementById('file-input')?.click()}
       >
         <CardContent className="flex flex-col items-center justify-center py-10">
-          {preview ? (
+          {preview && safeHref(preview) ? (
             <img
-              src={preview}
+              src={safeHref(preview)!}
               alt="Preview"
               className="max-w-full max-h-[300px] rounded-md"
             />

@@ -51,6 +51,12 @@ export function useMeshJob(taskId: string | null): MeshJobState {
     async function poll() {
       if (stopped) return;
 
+      // Guard: Don't fetch if taskId is invalid
+      if (!currentTaskId || typeof currentTaskId !== 'string' || currentTaskId.trim() === '') {
+        console.error('useMeshJob: Invalid taskId, stopping poll', currentTaskId);
+        return;
+      }
+
       setState((prev) => ({ ...prev, isLoading: true }));
 
       try {
