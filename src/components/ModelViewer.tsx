@@ -12,6 +12,11 @@ function Model({ url }: { url: string }) {
   // Proxy the URL through our server to bypass CORS
   const proxyUrl = `/api/proxy-model?url=${encodeURIComponent(url)}`;
   const { scene } = useGLTF(proxyUrl);
+
+  if (!scene) {
+    return <Loader />;
+  }
+
   return (
     <Center>
       <primitive object={scene} />

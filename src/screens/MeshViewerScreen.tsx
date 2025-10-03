@@ -14,6 +14,11 @@ interface MeshViewerScreenProps {
 function Model({ url }: { url: string }) {
   const proxyUrl = `/api/proxy-model?url=${encodeURIComponent(url)}`;
   const { scene } = useGLTF(proxyUrl);
+
+  if (!scene) {
+    return <Loader />;
+  }
+
   return (
     <Center>
       <primitive object={scene} />
