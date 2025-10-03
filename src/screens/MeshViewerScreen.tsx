@@ -133,8 +133,8 @@ export function MeshViewerScreen({
       </div>
 
       {/* Content Overlay - Top aligned, horizontally centered */}
-      <div className="flex min-h-full w-full flex-col items-center px-4 pt-6 md:px-6">
-        <Card className="w-full max-w-2xl bg-background/80 backdrop-blur-md">
+      <div className="pointer-events-none flex min-h-full w-full flex-col items-center px-4 pt-6 md:px-6">
+        <Card className="pointer-events-auto w-full max-w-2xl bg-background/80 backdrop-blur-md">
           <div className="flex items-center justify-between p-4">
             <div className="flex items-center gap-2">
               <div className="flex h-2 w-2 rounded-full bg-green-500">
