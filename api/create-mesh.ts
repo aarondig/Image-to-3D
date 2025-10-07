@@ -1,29 +1,12 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import FormData from 'form-data';
-
-/**
- * Enable CORS for the API endpoint
- */
-function enableCors(req: VercelRequest, res: VercelResponse) {
-  const origin = req.headers.origin || '';
-  const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:5173').split(',');
-
-  if (allowedOrigins.includes(origin)) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-    res.setHeader('Vary', 'Origin');
-  }
-
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
-  // Handle preflight
-  if (req.method === 'OPTIONS') {
-    res.status(204).end();
-    return true;
-  }
-
-  return false;
-}
+import {
+  parseCookies,
+  generateSessionId,
+  enableCors,
+  hasExceededLimit,
+  incrementUsage,
+} from './lib/credits';
 
 /**
  * Validate image size from base64 data URL
@@ -51,6 +34,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
+    // Parse cookies to get or create session ID
+    const cookies = parseCookies(req.headers.cookie || '');
+    let sessionId = cookies.sid;
+
+    // Generate new session ID if not present
+    if (!sessionId) {
+      sessionId = generateSessionId();
+      // Set cookie (expires in 24 hours)
+      res.setHeader('Set-Cookie', `sid=${sessionId}; Path=/; Max-Age=86400; SameSite=Strict; Secure`);
+    }
+
+    // Check if session has exceeded daily limit
+    if (hasExceededLimit(sessionId, 3)) {
+      return res.status(402).json({
+        error: 'Daily generation limit reached',
+        detail: 'You have used all 3 generations for today. Please try again tomorrow.',
+      });
+    }
+
     // Parse request body
     const { image, options } = req.body;
 
@@ -112,12 +114,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     console.log('File uploaded, token:', fileToken);
 
     // Step 2: Create image_to_model task with the token
+    // Default to 'fast' quality unless explicitly set to 'high'
+    const quality = options?.quality === 'high' ? 'high' : 'fast';
+
     const taskPayload = {
       type: 'image_to_model',
       file: {
         type: 'jpg',
         file_token: fileToken,
       },
+      ...(quality && { mode: quality }),
     };
 
     const tripoResponse = await fetch(`${tripoApiBase}/task`, {
@@ -145,6 +151,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const data = await tripoResponse.json();
+
+    // Increment usage count on successful job creation
+    incrementUsage(sessionId);
 
     // Return taskId and status
     return res.status(202).json({

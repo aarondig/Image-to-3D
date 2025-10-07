@@ -14,9 +14,20 @@ function App() {
   const [screen, setScreen] = useState<Screen>('HOME');
   const [imageDataUrl, setImageDataUrl] = useState<string | null>(null);
   const [taskId, setTaskId] = useState<string | null>(null);
+  const [nextAllowedAt, setNextAllowedAt] = useState<number>(0);
+  const [cooldownSeconds, setCooldownSeconds] = useState<number>(0);
 
   // Poll job status when taskId is available
   const jobStatus = useMeshJob(taskId);
+
+  // Cooldown timer effect
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const remaining = Math.max(0, nextAllowedAt - Date.now());
+      setCooldownSeconds(Math.ceil(remaining / 1000));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [nextAllowedAt]);
 
   // Auto-transition screens based on job status (using useEffect to avoid render-time state updates)
   useEffect(() => {
@@ -43,13 +54,23 @@ function App() {
     }
   }, [jobStatus.status, jobStatus.asset?.url, screen]);
 
-  async function handleImageSelected(dataUrl: string) {
+  async function handleImageSelected(dataUrl: string, quality: 'fast' | 'high' = 'fast') {
+    // Guard: Check cooldown
+    const now = Date.now();
+    if (now < nextAllowedAt) {
+      console.log('App: Cooldown active, ignoring request');
+      return;
+    }
+
     // Guard: Validate dataUrl before processing
     if (!dataUrl || typeof dataUrl !== 'string' || dataUrl.trim() === '') {
       console.error('App: Invalid image data URL');
       setScreen('ERROR');
       return;
     }
+
+    // Set cooldown (30 seconds)
+    setNextAllowedAt(now + 30000);
 
     setImageDataUrl(dataUrl);
     setScreen('PROCESSING');
@@ -61,17 +82,24 @@ function App() {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include', // Important: send cookies for credit tracking
         body: JSON.stringify({
           image: dataUrl,
           options: {
             target_format: 'glb',
-            quality: 'fast',
+            quality,
           },
         }),
       });
 
       if (!response.ok) {
         const error = await response.json();
+
+        // Handle credit limit exceeded
+        if (response.status === 402) {
+          throw new Error(error.detail || 'Daily generation limit reached. Try again tomorrow.');
+        }
+
         throw new Error(error.error || 'Failed to create mesh job');
       }
 
@@ -112,6 +140,7 @@ function App() {
           key="upload"
           onImageSelected={handleImageSelected}
           onBack={handleBackFromUpload}
+          cooldownSeconds={cooldownSeconds}
         />
       )}
 
