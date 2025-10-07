@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { AnimatePresence } from 'framer-motion';
+import { HomeScreen } from './screens/HomeScreen';
 import { UploadScreen } from './screens/UploadScreen';
 import { ProcessingScreen } from './screens/ProcessingScreen';
 import { MeshViewerScreen } from './screens/MeshViewerScreen';
@@ -10,7 +11,7 @@ import type { CreateMeshResponse } from './types/api';
 import type { Screen } from './types/screens';
 
 function App() {
-  const [screen, setScreen] = useState<Screen>('UPLOAD');
+  const [screen, setScreen] = useState<Screen>('HOME');
   const [imageDataUrl, setImageDataUrl] = useState<string | null>(null);
   const [taskId, setTaskId] = useState<string | null>(null);
 
@@ -83,15 +84,35 @@ function App() {
   }
 
   function handleReset() {
-    setScreen('UPLOAD');
+    setScreen('HOME');
     setImageDataUrl(null);
     setTaskId(null);
   }
 
+  function handleGetStarted() {
+    setScreen('UPLOAD');
+  }
+
+  function handleBackFromUpload() {
+    setScreen('HOME');
+  }
+
+  function handleBackFromProcessing() {
+    setScreen('UPLOAD');
+  }
+
   return (
     <AnimatePresence mode="wait">
+      {screen === 'HOME' && (
+        <HomeScreen key="home" onGetStarted={handleGetStarted} />
+      )}
+
       {screen === 'UPLOAD' && (
-        <UploadScreen key="upload" onImageSelected={handleImageSelected} />
+        <UploadScreen
+          key="upload"
+          onImageSelected={handleImageSelected}
+          onBack={handleBackFromUpload}
+        />
       )}
 
       {screen === 'PROCESSING' && imageDataUrl && (
@@ -100,6 +121,8 @@ function App() {
           image={imageDataUrl}
           progress={jobStatus.progress}
           status={jobStatus.message || 'Processing...'}
+          isComplete={jobStatus.status === 'SUCCEEDED'}
+          onBack={handleBackFromProcessing}
         />
       )}
 

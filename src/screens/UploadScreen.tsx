@@ -1,16 +1,17 @@
-import { Upload } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { GalleryVerticalEnd } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { safeHref } from '@/lib/safeUrl';
+import { Header } from '@/components/layout/Header';
+import { Footer } from '@/components/layout/Footer';
+import { Breadcrumb } from '@/components/layout/Breadcrumb';
 
 interface UploadScreenProps {
   onImageSelected: (imageData: string) => void;
+  onBack?: () => void;
 }
 
-export function UploadScreen({ onImageSelected }: UploadScreenProps) {
+export function UploadScreen({ onImageSelected, onBack }: UploadScreenProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -76,100 +77,96 @@ export function UploadScreen({ onImageSelected }: UploadScreenProps) {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -10 }}
-      transition={{ duration: 0.2 }}
-      className="flex min-h-svh w-full flex-col items-center px-4 pt-20"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.3 }}
+      className="min-h-screen flex flex-col"
     >
-      <div className="flex w-full max-w-md flex-col justify-center gap-6">
-        {/* Header */}
-        <div className="flex flex-col gap-2 text-center">
-          <h1 className="text-2xl font-semibold tracking-tight">
-            Photo to 3D
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Transform any photo into an interactive 3D model
-          </p>
-        </div>
+      <Header />
 
-        {/* Upload Card */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Upload Image</CardTitle>
-            <CardDescription>
-              Drag and drop an image or click to browse
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {preview ? (
-              /* Preview State */
-              <div className="grid gap-4">
-                <div className="overflow-hidden rounded-md border bg-muted">
-                  {safeHref(preview) && (
-                    <img
-                      src={safeHref(preview)}
-                      alt="Preview"
-                      className="aspect-square w-full object-cover"
-                    />
-                  )}
+      <Breadcrumb items={['Upload', 'Generate', 'View']} activeIndex={0} showBack onBack={onBack} />
+
+      {/* Canvas / Main Content */}
+      <div className="bg-neutral-900 box-border flex flex-col gap-[40px] items-center pb-[40px] pt-[24px] px-[24px] relative shrink-0 w-full">
+        <div className="w-full max-w-md mx-auto">
+          {/* Card */}
+          <div className="bg-[#1e1e1e] box-border flex flex-col gap-[24px] items-start px-0 py-[24px] relative rounded-[24px] shrink-0 w-full border border-neutral-800 shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
+            {/* Header */}
+            <div className="box-border flex gap-[6px] items-start justify-end px-[24px] py-0 relative shrink-0 w-full">
+              <div className="flex flex-col gap-[6px] items-start relative shrink-0 w-full">
+                <div className="flex gap-[10px] items-center relative shrink-0 w-full">
+                  <p className="font-semibold text-[14px] leading-[20px] text-white w-full">
+                    Upload Image
+                  </p>
                 </div>
-                <div className="grid gap-2">
-                  <Button
-                    size="default"
-                    className="w-full"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleGenerate();
-                    }}
-                  >
-                    Generate 3D Model
-                  </Button>
-                  <Button
-                    size="default"
-                    variant="outline"
-                    className="w-full"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setPreview(null);
-                      if (fileInputRef.current) {
-                        fileInputRef.current.value = '';
-                      }
-                    }}
-                  >
-                    Choose Different Image
-                  </Button>
+                <div className="flex gap-[10px] items-center relative shrink-0 w-full">
+                  <p className="font-normal text-[14px] leading-[20px] text-neutral-400 w-full">
+                    Drag and drop an image or click to browse
+                  </p>
                 </div>
               </div>
-            ) : (
-              /* Empty State */
+            </div>
+
+            {/* Upload Area */}
+            <div className="box-border flex flex-col gap-[16px] items-start px-[24px] py-0 relative shrink-0 w-full">
               <div
                 className={cn(
-                  'grid gap-4 rounded-lg border-2 border-dashed p-6 text-center transition-colors',
-                  isDragging
-                    ? 'border-primary bg-primary/5'
-                    : 'border-muted-foreground/25 hover:border-muted-foreground/50 cursor-pointer'
+                  'bg-[#2c2c2c] h-[200px] relative rounded-[16px] shrink-0 w-full border border-neutral-700 shadow-[0px_1px_2px_0px_rgba(0,0,0,0.1)] cursor-pointer transition-colors overflow-hidden',
+                  isDragging && 'border-neutral-500 bg-[#333333]'
                 )}
                 onDrop={onDrop}
                 onDragOver={onDragOver}
                 onDragLeave={onDragLeave}
                 onClick={() => fileInputRef.current?.click()}
               >
-                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-muted">
-                  <Upload className="h-5 w-5 text-muted-foreground" />
-                </div>
-                <div className="grid gap-1">
-                  <p className="text-sm font-medium">
-                    Click to upload or drag and drop
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    JPG, PNG, HEIC, WebP (max 10MB)
-                  </p>
-                </div>
+                {preview ? (
+                  /* Image Preview */
+                  <img
+                    src={preview}
+                    alt="Preview"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  /* Empty State */
+                  <div className="box-border flex flex-col gap-[12px] h-[200px] items-center justify-center overflow-clip px-[12px] py-[4px] relative w-full">
+                    <GalleryVerticalEnd className="h-[32px] w-[32px] text-white" strokeWidth={1.5} />
+                    <div className="flex gap-[10px] items-center justify-center relative shrink-0 w-full">
+                      <p className="font-normal text-[14px] leading-[20px] text-[#767676] text-center w-full">
+                        JPG, PNG, HEIC, WebP
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
-            )}
-          </CardContent>
-        </Card>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="box-border flex flex-col gap-[8px] items-start px-[24px] py-0 relative shrink-0 w-full">
+              <button
+                onClick={handleGenerate}
+                disabled={!preview}
+                className="bg-neutral-50 box-border flex flex-col gap-[10px] items-center justify-center px-[16px] py-[12px] relative rounded-[9999px] shadow-[0px_1px_2px_0px_rgba(0,0,0,0.1)] shrink-0 w-full hover:bg-neutral-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <div className="flex gap-[10px] items-center justify-center relative shrink-0">
+                  <p className="font-medium text-[14px] leading-[20px] text-neutral-900 whitespace-pre">
+                    Generate
+                  </p>
+                </div>
+              </button>
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="box-border flex flex-col gap-[10px] items-center justify-center px-[16px] py-[12px] relative rounded-[9999px] shrink-0 w-full hover:bg-neutral-800/50 transition-colors"
+              >
+                <div className="flex gap-[10px] items-center justify-center relative shrink-0">
+                  <p className="font-medium text-[14px] leading-[20px] text-neutral-50 whitespace-pre">
+                    Upload New Image
+                  </p>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
 
         {/* Hidden file input */}
         <input
@@ -180,6 +177,8 @@ export function UploadScreen({ onImageSelected }: UploadScreenProps) {
           onChange={onChange}
         />
       </div>
+
+      <Footer />
     </motion.div>
   );
 }

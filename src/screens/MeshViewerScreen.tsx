@@ -3,9 +3,9 @@ import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Environment, useGLTF, Center } from '@react-three/drei';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Download, Upload, Pause, Play } from 'lucide-react';
+import { Download, ArrowDown } from 'lucide-react';
 import { ErrorBoundary } from 'react-error-boundary';
+import { Header } from '@/components/layout/Header';
 import { safeHref } from '@/lib/safeUrl';
 
 interface MeshViewerScreenProps {
@@ -82,7 +82,7 @@ export function MeshViewerScreen({
   modelUrl,
   onUploadAnother,
 }: MeshViewerScreenProps) {
-  const [autoRotate, setAutoRotate] = useState(true);
+  const [autoRotate] = useState(true);
 
   // Guard: Don't render if modelUrl is invalid
   if (!modelUrl || typeof modelUrl !== 'string' || modelUrl.trim() === '') {
@@ -104,80 +104,68 @@ export function MeshViewerScreen({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      transition={{ duration: 0.2 }}
-      className="relative h-svh w-full"
+      transition={{ duration: 0.3 }}
+      className="relative min-h-screen flex flex-col bg-background"
     >
+      <Header />
+
       {/* Preload model */}
       <PreloadModel url={modelUrl} />
 
-      {/* Full-screen 3D Canvas */}
-      <div className="absolute inset-0 z-0">
-        <ErrorBoundary FallbackComponent={ErrorFallback}>
-          <Canvas camera={{ position: [0, 0, 5], fov: 50 }} style={{ touchAction: 'none' }}>
-            <ambientLight intensity={0.5} />
-            <directionalLight position={[10, 10, 5]} intensity={1} />
-            <Suspense fallback={<Loader />}>
-              <Model url={modelUrl} />
-            </Suspense>
-            <Environment preset="city" />
-            <OrbitControls
-              makeDefault
-              autoRotate={autoRotate}
-              autoRotateSpeed={2}
-              enableDamping
-              dampingFactor={0.05}
-              minDistance={2}
-              maxDistance={10}
-              enabled={true}
-            />
-          </Canvas>
-        </ErrorBoundary>
+      {/* Controls Overlay */}
+      <div className="absolute top-[84px] left-0 right-0 z-20 pointer-events-none">
+        <div className="container px-6 py-4">
+          <div className="max-w-md mx-auto flex items-center justify-between pointer-events-auto">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9 rounded-full bg-background/80 backdrop-blur-sm border border-border/40"
+              onClick={onUploadAnother}
+            >
+              <ArrowDown className="h-5 w-5" />
+            </Button>
+
+            <Button
+              variant="default"
+              size="default"
+              className="h-9 px-4 rounded-full bg-background/80 backdrop-blur-sm border border-border/40 hover:bg-accent"
+              onClick={onUploadAnother}
+            >
+              New Upload
+            </Button>
+          </div>
+        </div>
       </div>
 
-      {/* Content Overlay - Absolute positioned at top */}
-      <div className="pointer-events-none absolute left-0 right-0 top-0 z-10 flex justify-center px-4 pt-6 md:px-6">
-        <Card className="pointer-events-auto w-full max-w-2xl bg-background/80 backdrop-blur-md">
-          <div className="flex items-center justify-between p-4">
-            <div className="flex items-center gap-2">
-              <div className="flex h-2 w-2 rounded-full bg-green-500">
-                <div className="h-full w-full animate-ping rounded-full bg-green-400" />
-              </div>
-              <span className="text-sm font-medium">3D Model Ready</span>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setAutoRotate(!autoRotate)}
-                className="h-9 w-9"
-              >
-                {autoRotate ? (
-                  <Pause className="h-4 w-4" />
-                ) : (
-                  <Play className="h-4 w-4" />
-                )}
-                <span className="sr-only">
-                  {autoRotate ? 'Pause rotation' : 'Play rotation'}
-                </span>
-              </Button>
-              {safeHref(modelUrl) && (
-                <Button asChild variant="default" size="sm">
-                  <a href={safeHref(modelUrl)} download>
-                    <Download className="mr-2 h-4 w-4" />
-                    <span className="hidden sm:inline">Download</span>
-                    <span className="sm:hidden">Save</span>
-                  </a>
-                </Button>
-              )}
-              <Button variant="outline" size="sm" onClick={onUploadAnother}>
-                <Upload className="mr-2 h-4 w-4" />
-                <span className="hidden sm:inline">New Upload</span>
-                <span className="sm:hidden">New</span>
-              </Button>
-            </div>
-          </div>
-        </Card>
+      {/* 3D Canvas */}
+      <div className="flex-1 relative">
+        <div className="absolute inset-0">
+          <ErrorBoundary FallbackComponent={ErrorFallback}>
+            <Canvas
+              camera={{ position: [0, 0, 5], fov: 50 }}
+              style={{ touchAction: 'none' }}
+              gl={{ alpha: true }}
+            >
+              <ambientLight intensity={0.5} />
+              <directionalLight position={[10, 10, 5]} intensity={1} />
+              <directionalLight position={[-10, -10, -5]} intensity={0.3} />
+              <Suspense fallback={<Loader />}>
+                <Model url={modelUrl} />
+              </Suspense>
+              <Environment preset="city" />
+              <OrbitControls
+                makeDefault
+                autoRotate={autoRotate}
+                autoRotateSpeed={2}
+                enableDamping
+                dampingFactor={0.05}
+                minDistance={2}
+                maxDistance={10}
+                enabled={true}
+              />
+            </Canvas>
+          </ErrorBoundary>
+        </div>
       </div>
     </motion.div>
   );

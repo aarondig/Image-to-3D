@@ -1,4 +1,5 @@
 export type Screen =
+  | 'HOME'
   | 'UPLOAD'
   | 'PROCESSING'
   | 'POINT_CLOUD'

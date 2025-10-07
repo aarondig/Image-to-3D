@@ -1,5 +1,5 @@
 Screens:
-1. Landing / Upload
+1. Upload
    - Large centered drag-and-drop upload area with “Upload Photo” button.
    - After file selection, show accurate percentage-based Upload Progress Bar.
    - Do not display photo preview until upload completes.
@@ -37,6 +37,6 @@ Screens:
    - Full 3D error: friendly message + retry option.
 
 Style:
-- Minimalist, light background, clean typography. Sans Serif fonts.
+- Minimalist, dark background, clean typography. Sans Serif fonts.
 - Focus on clarity, progress visibility, and interactive feel.
 - Rounded corners, modern demo-style design.
