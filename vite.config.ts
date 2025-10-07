@@ -13,10 +13,12 @@ export default defineConfig({
     alias: {
       '@': path.resolve(__dirname, './src'),
       'three': path.resolve(__dirname, './node_modules/three'),
+      react: path.resolve(__dirname, 'node_modules/react'),
+      'react-dom': path.resolve(__dirname, 'node_modules/react-dom'),
     },
     dedupe: ['react', 'react-dom', 'three'],
   },
   optimizeDeps: {
-    include: ['three', 'three-stdlib'],
+    include: ['three', 'three-stdlib', 'react', 'react-dom'],
   },
 });

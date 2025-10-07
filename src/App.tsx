@@ -6,7 +6,6 @@ import { ProcessingScreen } from './screens/ProcessingScreen';
 import { MeshViewerScreen } from './screens/MeshViewerScreen';
 import { ErrorScreen } from './screens/ErrorScreen';
 import { useMeshJob } from './hooks/useMeshJob';
-import { config } from './config';
 import type { CreateMeshResponse } from './types/api';
 import type { Screen } from './types/screens';
 
@@ -76,8 +75,7 @@ function App() {
     setScreen('PROCESSING');
 
     try {
-      const apiBaseUrl = config.apiBaseUrl || '';
-      const response = await fetch(`${apiBaseUrl}/api/create-mesh`, {
+      const response = await fetch('/api/create-mesh', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

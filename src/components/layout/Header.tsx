@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { config } from '@/config';
 
 interface CreditsResponse {
   remainingMesh: number;
@@ -13,8 +12,7 @@ export function Header() {
   useEffect(() => {
     async function fetchCredits() {
       try {
-        const apiBaseUrl = config.apiBaseUrl || '';
-        const response = await fetch(`${apiBaseUrl}/api/credits`, {
+        const response = await fetch('/api/credits', {
           credentials: 'include', // Important: send cookies
         });
 

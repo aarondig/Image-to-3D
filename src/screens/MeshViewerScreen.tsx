@@ -1,4 +1,5 @@
 import { Suspense, useEffect } from 'react';
+import '@react-three/fiber';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Environment, useGLTF, Center } from '@react-three/drei';
 import { motion } from 'framer-motion';
