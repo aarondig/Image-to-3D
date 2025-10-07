@@ -8,7 +8,7 @@ import { Breadcrumb } from '@/components/layout/Breadcrumb';
 import { toDataUrlAndResize, getMaxDimensionForQuality } from '@/utils/imageResize';
 
 interface UploadScreenProps {
-  onImageSelected: (imageData: string, quality: 'fast' | 'high') => void;
+  onImageSelected: (imageData: string) => void;
   onBack?: () => void;
   cooldownSeconds?: number;
 }
@@ -16,11 +16,12 @@ interface UploadScreenProps {
 export function UploadScreen({ onImageSelected, onBack, cooldownSeconds = 0 }: UploadScreenProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
-  const [quality, setQuality] = useState<'fast' | 'high'>('fast');
   const [isProcessing, setIsProcessing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isOnCooldown = cooldownSeconds > 0;
+  // Always use high quality (768px) for all uploads
+  const quality = 'high';
 
   const handleFile = useCallback(
     async (file: File) => {
@@ -57,19 +58,19 @@ export function UploadScreen({ onImageSelected, onBack, cooldownSeconds = 0 }: U
       const file = fileInputRef.current?.files?.[0];
       if (!file) {
         // Fallback: use preview data URL if file not available
-        onImageSelected(preview, quality);
+        onImageSelected(preview);
         return;
       }
 
-      // Resize image based on quality mode
+      // Resize image to 768px (high quality)
       const maxDim = getMaxDimensionForQuality(quality);
       const resizedDataUrl = await toDataUrlAndResize(file, maxDim, 'image/jpeg', 0.85);
 
-      onImageSelected(resizedDataUrl, quality);
+      onImageSelected(resizedDataUrl);
     } catch (error) {
       console.error('Error processing image:', error);
       // Fallback: use preview if resize fails
-      onImageSelected(preview, quality);
+      onImageSelected(preview);
     } finally {
       setIsProcessing(false);
     }
@@ -165,41 +166,6 @@ export function UploadScreen({ onImageSelected, onBack, cooldownSeconds = 0 }: U
                     </div>
                   </div>
                 )}
-              </div>
-            </div>
-
-            {/* Quality Mode Toggle */}
-            <div className="box-border flex flex-col gap-[12px] items-start px-[24px] py-0 relative shrink-0 w-full">
-              <div className="flex gap-[10px] items-center relative shrink-0 w-full">
-                <p className="font-medium text-[14px] leading-[20px] text-white">
-                  Quality Mode
-                </p>
-              </div>
-              <div className="flex gap-[8px] items-center relative shrink-0 w-full">
-                <button
-                  onClick={() => setQuality('fast')}
-                  className={cn(
-                    'flex-1 box-border flex flex-col gap-[8px] items-center justify-center px-[16px] py-[10px] relative rounded-[12px] transition-all',
-                    quality === 'fast'
-                      ? 'bg-neutral-50 text-neutral-900 shadow-[0px_1px_2px_0px_rgba(0,0,0,0.1)]'
-                      : 'bg-neutral-800 text-neutral-400 hover:bg-neutral-700'
-                  )}
-                >
-                  <p className="font-medium text-[13px] leading-[18px]">Preview</p>
-                  <p className="font-normal text-[11px] leading-[16px] opacity-70">Fast · Low cost</p>
-                </button>
-                <button
-                  onClick={() => setQuality('high')}
-                  className={cn(
-                    'flex-1 box-border flex flex-col gap-[8px] items-center justify-center px-[16px] py-[10px] relative rounded-[12px] transition-all',
-                    quality === 'high'
-                      ? 'bg-neutral-50 text-neutral-900 shadow-[0px_1px_2px_0px_rgba(0,0,0,0.1)]'
-                      : 'bg-neutral-800 text-neutral-400 hover:bg-neutral-700'
-                  )}
-                >
-                  <p className="font-medium text-[13px] leading-[18px]">Full 3D</p>
-                  <p className="font-normal text-[11px] leading-[16px] opacity-70">Slower · Higher cost</p>
-                </button>
               </div>
             </div>
 

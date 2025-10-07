@@ -53,7 +53,7 @@ function App() {
     }
   }, [jobStatus.status, jobStatus.asset?.url, screen]);
 
-  async function handleImageSelected(dataUrl: string, quality: 'fast' | 'high' = 'fast') {
+  async function handleImageSelected(dataUrl: string) {
     // Guard: Check cooldown
     const now = Date.now();
     if (now < nextAllowedAt) {
@@ -85,7 +85,7 @@ function App() {
           image: dataUrl,
           options: {
             target_format: 'glb',
-            quality,
+            quality: 'high', // Always use high quality (768px)
           },
         }),
       });

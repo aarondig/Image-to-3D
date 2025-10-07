@@ -41,10 +41,14 @@ export async function toDataUrlAndResize(
     // Calculate scale factor
     const scale = Math.min(1, maxDim / Math.max(bitmap.width, bitmap.height));
 
-    // If no scaling needed and output format matches input, return original
-    if (scale === 1 && file.type === mime) {
+    // If no scaling needed (image is already 768px or smaller), return original
+    // This avoids unnecessary compression for already-small images
+    if (scale === 1) {
+      console.log(`Image already ≤${maxDim}px (${bitmap.width}x${bitmap.height}), using original`);
       return blobToDataURL(file);
     }
+
+    console.log(`Resizing image from ${bitmap.width}x${bitmap.height} to ${Math.floor(bitmap.width * scale)}x${Math.floor(bitmap.height * scale)}`);
 
     // Create offscreen canvas with scaled dimensions
     const canvas = new OffscreenCanvas(
