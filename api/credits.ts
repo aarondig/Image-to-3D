@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { parseCookies, generateSessionId, enableCors, getUsageForSession } from './lib/credits.js';
+import { parseCookies, generateSessionId, enableCors, getUsageForSession } from './_shared.js';
 
 /**
  * GET /api/credits

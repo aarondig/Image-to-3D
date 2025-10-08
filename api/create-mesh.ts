@@ -6,8 +6,8 @@ import {
   enableCors,
   hasExceededLimit,
   incrementUsage,
-} from './lib/credits.js';
-import { createJob } from './lib/jobStore.js';
+  createJob,
+} from './_shared.js';
 
 /**
  * Validate image size from base64 data URL

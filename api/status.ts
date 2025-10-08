@@ -8,7 +8,7 @@ import {
   getQueueWaitMs,
   lockFallback,
   type JobMetadata,
-} from './lib/jobStore.js';
+} from './_shared.js';
 
 /**
  * Enable CORS for the API endpoint
