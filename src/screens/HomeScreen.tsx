@@ -22,7 +22,7 @@ export function HomeScreen({ onGetStarted }: HomeScreenProps) {
       <Breadcrumb items={['Upload', 'Generate', 'View']} activeIndex={-1} />
 
       {/* Canvas / Main Content */}
-      <div className="bg-neutral-900 box-border flex flex-col gap-[40px] items-start pb-[40px] pt-[24px] px-[24px] relative shrink-0 w-full">
+      <div className="bg-neutral-900 box-border flex flex-col gap-[40px] items-start pb-[40px] pt-[24px] px-[24px] relative w-full min-h-[640px]">
         <div className="w-full max-w-md mx-auto flex flex-col gap-[40px]">
           {/* Hero Text */}
           <div className="flex flex-col gap-[16px] items-start relative shrink-0 w-full">

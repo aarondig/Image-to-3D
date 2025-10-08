@@ -9,8 +9,8 @@ interface BreadcrumbProps {
 
 export function Breadcrumb({ items, activeIndex, showBack, onBack }: BreadcrumbProps) {
   return (
-    <div className="bg-neutral-900 relative shrink-0 w-full border-b border-neutral-800">
-      <div className="box-border flex flex-wrap items-center justify-between overflow-clip p-[24px] relative w-full">
+    <div className="bg-neutral-900 relative shrink-0 w-full border-b border-neutral-800 max-h-[60px]">
+      <div className="box-border flex items-center justify-between overflow-clip p-[24px] relative w-full h-[60px]">
         {showBack && onBack && (
           <button
             onClick={onBack}
