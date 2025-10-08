@@ -1,60 +1,113 @@
 import { motion } from 'framer-motion';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle, RotateCcw } from 'lucide-react';
+import { ChevronLeft } from 'lucide-react';
+import { Header } from '@/components/layout/Header';
+import { Footer } from '@/components/layout/Footer';
 
 interface ErrorScreenProps {
   error: string;
   onRetry: () => void;
 }
 
+/**
+ * Parse error message to extract a user-friendly title
+ * Falls back to "Upload Failed" if no specific error
+ */
+function getErrorTitle(error: string): string {
+  // Map common errors to user-friendly titles
+  const errorMap: Record<string, string> = {
+    'Daily generation limit reached': 'Daily Limit Reached',
+    'Image too large': 'Image Too Large',
+    'Missing or invalid image': 'Invalid Image',
+    'Provider error': 'Service Error',
+    'Quota/credits exceeded': 'Credits Exhausted',
+    'Server configuration error': 'Server Error',
+    'Failed to generate 3D model': 'Generation Failed',
+  };
+
+  // Check if error contains any mapped strings
+  for (const [key, title] of Object.entries(errorMap)) {
+    if (error.includes(key)) {
+      return title;
+    }
+  }
+
+  return 'Upload Failed';
+}
+
 export function ErrorScreen({ error, onRetry }: ErrorScreenProps) {
+  const errorTitle = getErrorTitle(error);
+
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -10 }}
-      transition={{ duration: 0.2 }}
-      className="flex min-h-svh w-full flex-col items-center px-4 pt-20"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.3 }}
+      className="min-h-screen flex flex-col"
     >
-      <div className="flex w-full max-w-md flex-col justify-center gap-6">
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-destructive/10">
-                <AlertCircle className="h-5 w-5 text-destructive" />
+      <Header />
+
+      {/* Secondary Header with Back Button */}
+      <div className="bg-neutral-900 relative shrink-0 w-full border-b border-neutral-800 max-h-[60px]">
+        <div className="box-border flex items-center justify-between overflow-clip p-[24px] relative w-full h-[60px]">
+          <button
+            onClick={onRetry}
+            className="box-border flex items-center justify-center p-[8px] relative rounded-full shrink-0 size-[36px] border border-neutral-700 shadow-[0px_1px_2px_0px_rgba(0,0,0,0.1)] hover:bg-white transition-colors group"
+          >
+            <ChevronLeft className="h-[22px] w-[22px] text-white group-hover:text-black transition-colors" strokeWidth={2} />
+          </button>
+        </div>
+      </div>
+
+      {/* Canvas / Main Content */}
+      <div className="bg-neutral-900 box-border flex flex-col gap-[40px] items-start pb-[40px] pt-[24px] px-[24px] relative w-full min-h-[640px]">
+        <div className="w-full max-w-md mx-auto flex flex-col gap-[40px]">
+          {/* Hero Text */}
+          <div className="flex flex-col gap-[16px] items-start relative shrink-0 w-full">
+            <div className="flex flex-col gap-[8px] items-start relative shrink-0 w-full">
+              <h1 className="font-semibold text-[24px] leading-[32px] text-white w-full">
+                Something went wrong.
+              </h1>
+              <p className="font-normal text-[16px] leading-[24px] text-neutral-400 w-full">
+                We couldn't generate your 3D Model.
+              </p>
+            </div>
+          </div>
+
+          {/* Error Card */}
+          <div className="bg-[#1e1e1e] box-border flex flex-col gap-[24px] items-start px-0 py-[24px] relative rounded-[24px] shrink-0 w-full border border-neutral-800 shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
+            {/* Card Header */}
+            <div className="box-border flex flex-col gap-[6px] items-start px-[24px] py-0 relative shrink-0 w-full">
+              <div className="flex gap-[10px] items-center relative shrink-0 w-full">
+                <p className="font-semibold text-[14px] leading-[20px] text-white w-full">
+                  {errorTitle}
+                </p>
               </div>
-              <div className="grid gap-1">
-                <CardTitle>Something went wrong</CardTitle>
-                <CardDescription>We couldn't generate your 3D model</CardDescription>
+              <div className="flex gap-[10px] items-center relative shrink-0 w-full">
+                <p className="font-normal text-[14px] leading-[20px] text-neutral-400 w-full">
+                  If the problem persists, try a different image.
+                </p>
               </div>
             </div>
-          </CardHeader>
 
-          <CardContent className="grid gap-4">
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                {error || 'Failed to generate 3D model. Please try again.'}
-              </AlertDescription>
-            </Alert>
-
-            <Button
-              onClick={onRetry}
-              size="default"
-              className="w-full"
-            >
-              <RotateCcw className="mr-2 h-4 w-4" />
-              Try Again
-            </Button>
-
-            <p className="text-center text-xs text-muted-foreground">
-              If the problem persists, try a different photo
-            </p>
-          </CardContent>
-        </Card>
+            {/* Try Again Button */}
+            <div className="box-border flex flex-col gap-[8px] items-start px-[24px] py-0 relative shrink-0 w-full">
+              <button
+                onClick={onRetry}
+                className="bg-neutral-50 box-border flex flex-col gap-[10px] items-center justify-center px-[16px] py-[12px] relative rounded-[9999px] shadow-[0px_1px_2px_0px_rgba(0,0,0,0.1)] shrink-0 w-full hover:bg-neutral-100 transition-colors"
+              >
+                <div className="flex gap-[10px] items-center justify-center relative shrink-0">
+                  <p className="font-medium text-[14px] leading-[20px] text-neutral-900 whitespace-pre">
+                    Try Again
+                  </p>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
+
+      <Footer />
     </motion.div>
   );
 }
