@@ -6,7 +6,8 @@ import {
   enableCors,
   hasExceededLimit,
   incrementUsage,
-} from './lib/credits';
+} from './lib/credits.js';
+import { createJob } from './lib/jobStore.js';
 
 /**
  * Validate image size from base64 data URL
@@ -113,8 +114,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     console.log('File uploaded, token:', fileToken);
 
-    // Step 2: Create image_to_model task with the token
-    // Default to 'fast' quality unless explicitly set to 'high'
+    // Step 2: Create image_to_model task with TripoSR (free tier)
     const quality = options?.quality === 'high' ? 'high' : 'fast';
 
     const taskPayload = {
@@ -123,8 +123,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         type: 'jpg',
         file_token: fileToken,
       },
+      model_version: 'v2.0-20240919', // TripoSR model
       ...(quality && { mode: quality }),
     };
+
+    console.log('📤 [CREATE-MESH] Creating TripoSR job with payload:', JSON.stringify(taskPayload, null, 2));
 
     const tripoResponse = await fetch(`${tripoApiBase}/task`, {
       method: 'POST',
@@ -135,9 +138,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       body: JSON.stringify(taskPayload),
     });
 
+    console.log('📥 [CREATE-MESH] TripoSR API response status:', tripoResponse.status);
+
     if (!tripoResponse.ok) {
       const errorText = await tripoResponse.text();
-      console.error('Tripo API error:', tripoResponse.status, errorText);
+      console.error('❌ [CREATE-MESH] TripoSR API error:', tripoResponse.status, errorText);
 
       // Map Tripo error codes
       if (tripoResponse.status === 402) {
@@ -151,14 +156,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const data = await tripoResponse.json();
+    console.log('📦 [CREATE-MESH] TripoSR full response:', JSON.stringify(data, null, 2));
+
+    const taskId = data.data?.task_id || data.task_id;
+
+    // Create job metadata for fallback tracking
+    createJob(taskId, 'tripoSR', image);
 
     // Increment usage count on successful job creation
     incrementUsage(sessionId);
 
+    console.log('✅ [CREATE-MESH] Job created successfully - taskId:', taskId, 'provider: tripoSR');
+
     // Return taskId and status
     return res.status(202).json({
-      taskId: data.data?.task_id || data.task_id,
+      taskId,
       status: 'QUEUED',
+      provider: 'tripoSR',
       etaSeconds: 60,
     });
   } catch (error) {

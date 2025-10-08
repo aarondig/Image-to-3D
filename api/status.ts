@@ -1,5 +1,14 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import type { JobStatus } from '../src/types/api';
+import type { JobStatus } from '../src/types/api.js';
+import FormData from 'form-data';
+import {
+  getJob,
+  updateJob,
+  shouldTriggerFallback,
+  getQueueWaitMs,
+  lockFallback,
+  type JobMetadata,
+} from './lib/jobStore.js';
 
 /**
  * Enable CORS for the API endpoint
@@ -106,6 +115,100 @@ function getStatusMessage(status: JobStatus, progress: number): string {
   }
 }
 
+/**
+ * Create fallback job with Tripo3D
+ */
+async function createFallbackJob(job: JobMetadata, reason: 'queue-timeout' | 'primary-failed'): Promise<string | null> {
+  try {
+    const tripoApiBase = process.env.TRIPO_API_BASE;
+    const tripoApiKey = process.env.TRIPO_API_KEY;
+
+    if (!tripoApiBase || !tripoApiKey || !job.originalImage) {
+      console.error('❌ [FALLBACK] Missing required data for fallback');
+      return null;
+    }
+
+    console.log(`🔄 [FALLBACK] Triggering fallback to Tripo3D (reason: ${reason})`);
+
+    // Upload image again
+    const base64Data = job.originalImage.includes(',') ? job.originalImage.split(',')[1] : job.originalImage;
+    const imageBuffer = Buffer.from(base64Data, 'base64');
+
+    const uploadFormData = new FormData();
+    uploadFormData.append('file', imageBuffer, {
+      filename: 'image.jpg',
+      contentType: 'image/jpeg',
+    });
+
+    const uploadResponse = await fetch(`${tripoApiBase}/upload`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${tripoApiKey}`,
+        ...uploadFormData.getHeaders(),
+      },
+      body: uploadFormData.getBuffer(),
+    });
+
+    if (!uploadResponse.ok) {
+      console.error('❌ [FALLBACK] Upload failed:', uploadResponse.status);
+      return null;
+    }
+
+    const uploadData = await uploadResponse.json();
+    const fileToken = uploadData.data?.image_token || uploadData.image_token;
+
+    // Create Tripo3D task (different model version - paid tier)
+    const taskPayload = {
+      type: 'image_to_model',
+      file: {
+        type: 'jpg',
+        file_token: fileToken,
+      },
+      // No model_version specified = uses default Tripo3D (paid tier)
+      mode: 'high',
+    };
+
+    console.log('📤 [FALLBACK] Creating Tripo3D job with payload:', JSON.stringify(taskPayload, null, 2));
+
+    const tripoResponse = await fetch(`${tripoApiBase}/task`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${tripoApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(taskPayload),
+    });
+
+    if (!tripoResponse.ok) {
+      const errorText = await tripoResponse.text();
+      console.error('❌ [FALLBACK] Tripo3D API error:', tripoResponse.status, errorText);
+      return null;
+    }
+
+    const data = await tripoResponse.json();
+    console.log('📦 [FALLBACK] Tripo3D full response:', JSON.stringify(data, null, 2));
+
+    const newTaskId = data.data?.task_id || data.task_id;
+    console.log('✅ [FALLBACK] Fallback job created - newTaskId:', newTaskId);
+
+    // Update job metadata
+    updateJob(job.taskId, {
+      provider: 'tripo3D',
+      stage: 'FALLBACK',
+      fallback: {
+        attempted: true,
+        reason,
+        attemptedAt: Date.now(),
+      },
+    });
+
+    return newTaskId;
+  } catch (error) {
+    console.error('❌ [FALLBACK] Error creating fallback job:', error);
+    return null;
+  }
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Enable CORS
   if (enableCors(req, res)) {
@@ -119,11 +222,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     // Extract taskId from query
-    const taskId = String(req.query.id || '');
+    let taskId = String(req.query.id || '');
 
     if (!taskId) {
       return res.status(400).json({ error: 'Missing or invalid id' });
     }
+
+    console.log(`🔍 [STATUS] Checking status for taskId: ${taskId}`);
 
     // Get Tripo API credentials
     const tripoApiBase = process.env.TRIPO_API_BASE;
@@ -134,7 +239,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(500).json({ error: 'Server configuration error' });
     }
 
+    // Get job metadata for fallback tracking
+    const job = getJob(taskId);
+    if (job) {
+      console.log(`📊 [STATUS] Job metadata - provider: ${job.provider}, stage: ${job.stage}, fallback attempted: ${job.fallback.attempted}`);
+    }
+
     // Query Tripo API
+    console.log(`📡 [STATUS] Querying API for task: ${taskId}`);
     const tripoResponse = await fetch(`${tripoApiBase}/task/${taskId}`, {
       method: 'GET',
       headers: {
@@ -142,9 +254,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       },
     });
 
+    console.log(`📥 [STATUS] API response status: ${tripoResponse.status}`);
+
     if (!tripoResponse.ok) {
       const errorText = await tripoResponse.text();
-      console.error('Tripo API error:', tripoResponse.status, errorText);
+      console.error(`❌ [STATUS] Tripo API error: ${tripoResponse.status} - ${errorText}`);
 
       // 404 means task not found (expired or invalid)
       if (tripoResponse.status === 404) {
@@ -160,10 +274,70 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const tripoData = await tripoResponse.json();
+    console.log(`📦 [STATUS] Full API response:`, JSON.stringify(tripoData, null, 2));
 
-    // Normalize and return response
+    // Normalize response
     const normalized = normalizeResponse(tripoData);
-    return res.status(200).json(normalized);
+    console.log(`✅ [STATUS] Normalized status: ${normalized.status}, progress: ${normalized.progress}`);
+
+    // Check if we need to trigger fallback
+    if (job && normalized.status === 'QUEUED') {
+      const queueWaitMs = getQueueWaitMs(job);
+      console.log(`⏱️  [STATUS] Queue wait time: ${queueWaitMs}ms`);
+
+      if (shouldTriggerFallback(job)) {
+        console.log(`🚨 [STATUS] Fallback threshold reached! Triggering fallback to Tripo3D`);
+
+        const newTaskId = await createFallbackJob(job, 'queue-timeout');
+
+        if (newTaskId) {
+          // Switch to new taskId for future polls
+          taskId = newTaskId;
+          console.log(`🔄 [STATUS] Switched to fallback taskId: ${newTaskId}`);
+
+          // Return response with new taskId and fallback metadata
+          return res.status(200).json({
+            ...normalized,
+            taskId: newTaskId,
+            provider: 'tripo3D',
+            stage: 'FALLBACK',
+            queueWaitMs,
+            fallback: job.fallback,
+          });
+        }
+      }
+
+      // Return with queue metadata
+      return res.status(200).json({
+        ...normalized,
+        provider: job.provider,
+        stage: job.stage,
+        queueWaitMs,
+        fallback: job.fallback,
+      });
+    }
+
+    // Lock fallback if job has started running
+    if (job && normalized.status === 'RUNNING' && !job.fallbackLocked) {
+      lockFallback(taskId);
+      updateJob(taskId, { stage: 'GENERATE' });
+      console.log(`🔒 [STATUS] Job entered RUNNING state - fallback locked`);
+    }
+
+    // Update stage on completion
+    if (job && (normalized.status === 'SUCCEEDED' || normalized.status === 'FAILED')) {
+      updateJob(taskId, { stage: normalized.status === 'SUCCEEDED' ? 'COMPLETE' : 'ERROR' });
+    }
+
+    // Return normalized response with metadata
+    return res.status(200).json({
+      ...normalized,
+      ...(job && {
+        provider: job.provider,
+        stage: job.stage,
+        fallback: job.fallback,
+      }),
+    });
   } catch (error) {
     console.error('Error in status endpoint:', error);
     return res.status(500).json({
