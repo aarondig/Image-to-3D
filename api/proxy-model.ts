@@ -1,13 +1,14 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 /**
- * Proxy endpoint to fetch GLB models from Tripo CDN
+ * Proxy endpoint to fetch 3D models from Tripo CDN
  * Bypasses CORS restrictions by proxying through our server
+ * Supports format parameter to convert GLB URLs to USDZ
  */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  const { url } = req.query;
+  const { url, format } = req.query;
 
-  console.log('[proxy-model] Request received', { url, query: req.query });
+  console.log('[proxy-model] Request received', { url, format, query: req.query });
 
   if (!url || typeof url !== 'string') {
     console.error('[proxy-model] Missing or invalid url parameter', { url, type: typeof url });
@@ -20,11 +21,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(400).json({ error: 'Invalid URL - must be from Tripo CDN' });
   }
 
-  console.log('[proxy-model] Fetching from Tripo CDN', { url });
+  // Convert GLB URL to USDZ if requested
+  let fetchUrl = url;
+  let contentType = 'model/gltf-binary';
+
+  if (format === 'usdz') {
+    // Replace .glb with .usdz in the URL
+    fetchUrl = url.replace(/\.glb$/i, '.usdz');
+    contentType = 'model/vnd.usdz+zip';
+    console.log('[proxy-model] Converting to USDZ format', { originalUrl: url, usdzUrl: fetchUrl });
+  }
+
+  console.log('[proxy-model] Fetching from Tripo CDN', { fetchUrl, format });
 
   try {
-    // Fetch the GLB from Tripo
-    const response = await fetch(url);
+    // Fetch the model from Tripo
+    const response = await fetch(fetchUrl);
 
     console.log('[proxy-model] Tripo CDN response', {
       status: response.status,
@@ -40,16 +52,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // Get the file as a buffer
     const buffer = await response.arrayBuffer();
-    console.log('[proxy-model] Buffer received', { size: buffer.byteLength });
+    console.log('[proxy-model] Buffer received', { size: buffer.byteLength, format });
 
     // Set CORS headers
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-    res.setHeader('Content-Type', 'model/gltf-binary');
+    res.setHeader('Content-Type', contentType);
     res.setHeader('Cache-Control', 'public, max-age=31536000'); // Cache for 1 year
 
-    console.log('[proxy-model] Sending GLB to client');
-    // Send the GLB file
+    console.log('[proxy-model] Sending model to client', { format, contentType });
+    // Send the model file
     return res.send(Buffer.from(buffer));
   } catch (error) {
     console.error('[proxy-model] Error:', error);
