@@ -1,18 +1,15 @@
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useEffect } from 'react';
 import '@react-three/fiber';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Environment, useGLTF, Center } from '@react-three/drei';
-import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowDown, Linkedin, ArrowUpRight, X } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { ArrowDown, Linkedin, ArrowUpRight } from 'lucide-react';
 import { ErrorBoundary } from 'react-error-boundary';
 import { Header } from '@/components/layout/Header';
 import { safeHref } from '@/lib/safeUrl';
 
-type ExportFormat = 'glb' | 'usdz';
-
 interface MeshViewerScreenProps {
   modelUrl: string;
-  usdzUrl?: string;
   onUploadAnother: () => void;
 }
 
@@ -83,7 +80,6 @@ function ErrorFallback({ error }: { error: Error }) {
 
 export function MeshViewerScreen({
   modelUrl,
-  usdzUrl,
   onUploadAnother,
 }: MeshViewerScreenProps) {
   // Guard: Don't render if modelUrl is invalid
@@ -103,31 +99,14 @@ export function MeshViewerScreen({
 
   console.log('MeshViewerScreen: Rendering with modelUrl', modelUrl);
 
-  const [showFormatSelector, setShowFormatSelector] = useState(false);
-
-  const handleDownload = (format: ExportFormat) => {
-    let downloadUrl: string;
-
-    if (format === 'usdz' && usdzUrl) {
-      // Use direct USDZ URL if available
-      downloadUrl = `/api/proxy-model?url=${encodeURIComponent(usdzUrl)}`;
-      console.log('Using direct USDZ URL:', usdzUrl);
-    } else if (format === 'usdz') {
-      // Fallback: try to convert GLB to USDZ
-      downloadUrl = `/api/proxy-model?url=${encodeURIComponent(modelUrl)}&format=usdz`;
-      console.log('Converting GLB to USDZ:', modelUrl);
-    } else {
-      // GLB format
-      downloadUrl = `/api/proxy-model?url=${encodeURIComponent(modelUrl)}`;
-    }
-
+  const handleDownload = () => {
+    const proxyUrl = `/api/proxy-model?url=${encodeURIComponent(modelUrl)}`;
     const link = document.createElement('a');
-    link.href = downloadUrl;
-    link.download = `model.${format}`;
+    link.href = proxyUrl;
+    link.download = 'model.glb';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    setShowFormatSelector(false);
   };
 
   return (
@@ -151,7 +130,7 @@ export function MeshViewerScreen({
           <div className="flex items-center justify-between px-6">
             {/* Download Button */}
             <button
-              onClick={() => setShowFormatSelector(!showFormatSelector)}
+              onClick={handleDownload}
               className="flex items-center justify-center w-9 h-9 rounded-full border border-neutral-700 shadow-[0px_1px_2px_0px_rgba(0,0,0,0.1)] p-2 hover:bg-neutral-800 transition-colors"
             >
               <ArrowDown className="w-[22px] h-[22px] text-neutral-50" />
@@ -165,48 +144,6 @@ export function MeshViewerScreen({
               <p className="text-sm font-medium text-neutral-50">New Upload</p>
             </button>
           </div>
-
-          {/* Format Selector Modal */}
-          <AnimatePresence>
-            {showFormatSelector && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                className="border-t border-neutral-800 overflow-hidden"
-              >
-                <div className="px-6 py-4 flex flex-col gap-3">
-                  <div className="flex items-center justify-between mb-2">
-                    <p className="text-sm font-semibold text-white">Choose Format</p>
-                    <button
-                      onClick={() => setShowFormatSelector(false)}
-                      className="text-neutral-400 hover:text-white transition-colors"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-
-                  {/* GLB Option */}
-                  <button
-                    onClick={() => handleDownload('glb')}
-                    className="bg-neutral-800 border border-neutral-700 rounded-2xl p-4 hover:bg-neutral-700 transition-colors text-left"
-                  >
-                    <p className="text-sm font-semibold text-white mb-1">GLB</p>
-                    <p className="text-xs text-neutral-400">Universal format for web, AR, and 3D software</p>
-                  </button>
-
-                  {/* USDZ Option */}
-                  <button
-                    onClick={() => handleDownload('usdz')}
-                    className="bg-neutral-800 border border-neutral-700 rounded-2xl p-4 hover:bg-neutral-700 transition-colors text-left"
-                  >
-                    <p className="text-sm font-semibold text-white mb-1">USDZ</p>
-                    <p className="text-xs text-neutral-400">Optimized for iPhone, iPad, and iMessage sharing</p>
-                  </button>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
         </div>
 
         {/* 3D Canvas */}

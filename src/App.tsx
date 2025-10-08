@@ -157,6 +157,7 @@ function App() {
         <MeshViewerScreen
           key="mesh-viewer"
           modelUrl={jobStatus.asset.url}
+          usdzUrl={jobStatus.asset.usdzUrl}
           onUploadAnother={handleReset}
         />
       ) : screen === 'MESH_VIEWER' ? (

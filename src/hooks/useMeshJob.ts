@@ -10,6 +10,7 @@ interface MeshJobState {
     url: string;
     format: string;
     sizeBytes: number;
+    usdzUrl?: string;
   } | null;
   error?: string | null;
   isLoading: boolean;

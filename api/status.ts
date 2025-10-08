@@ -63,23 +63,48 @@ function normalizeResponse(tripoData: any) {
 
   console.log('Status:', status, 'Raw progress:', rawProgress, 'Normalized:', progress);
 
-  // Extract asset information - check multiple possible locations
+  // Extract asset information - check multiple possible locations and formats
   let asset = null;
   if (status === 'SUCCEEDED') {
-    const modelUrl = tripoData.data?.result?.pbr_model?.url ||
-                     tripoData.data?.output?.pbr_model ||
-                     tripoData.data?.result?.model ||
-                     tripoData.data?.output?.model ||
-                     tripoData.data?.model ||
-                     tripoData.output?.model;
+    const result = tripoData.data?.result || tripoData.data?.output || tripoData.output || {};
 
-    if (modelUrl) {
+    // Try to get rendered_image URLs (contains both GLB and USDZ)
+    const renderedImage = result.rendered_image || result.pbr_model || result.model;
+
+    // Check if we have multiple formats
+    let glbUrl = null;
+    let usdzUrl = null;
+
+    if (renderedImage) {
+      // If it's an object with format-specific URLs
+      if (typeof renderedImage === 'object') {
+        glbUrl = renderedImage.glb?.url || renderedImage.url;
+        usdzUrl = renderedImage.usdz?.url;
+      } else if (typeof renderedImage === 'string') {
+        // Single URL (assume GLB)
+        glbUrl = renderedImage;
+      }
+    }
+
+    // Fallback to checking direct paths
+    if (!glbUrl) {
+      glbUrl = tripoData.data?.result?.pbr_model?.url ||
+               tripoData.data?.output?.pbr_model ||
+               tripoData.data?.result?.model ||
+               tripoData.data?.output?.model ||
+               tripoData.data?.model ||
+               tripoData.output?.model;
+    }
+
+    if (glbUrl) {
       asset = {
-        url: modelUrl,
+        url: glbUrl,
         format: 'glb',
         sizeBytes: 0,
+        // Include USDZ URL if available
+        ...(usdzUrl && { usdzUrl }),
       };
-      console.log('Asset found:', modelUrl);
+      console.log('Asset found:', { glbUrl, usdzUrl });
     } else {
       console.log('No asset URL found in response');
     }
