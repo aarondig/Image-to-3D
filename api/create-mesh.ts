@@ -125,8 +125,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       },
       model_version: 'v2.0-20240919', // TripoSR model
       ...(quality && { mode: quality }),
-      // Request both GLB and USDZ formats
-      out_format: ['glb', 'usdz'],
+      // Only request GLB by default - USDZ converted on-demand to save credits
     };
 
     console.log('📤 [CREATE-MESH] Creating TripoSR job with payload:', JSON.stringify(taskPayload, null, 2));

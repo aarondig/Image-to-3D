@@ -6,13 +6,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowDown, Linkedin, ArrowUpRight, X } from 'lucide-react';
 import { ErrorBoundary } from 'react-error-boundary';
 import { Header } from '@/components/layout/Header';
+import { ConversionLoadingCard } from '@/components/ConversionLoadingCard';
 import { safeHref } from '@/lib/safeUrl';
 
 type ExportFormat = 'glb' | 'usdz';
 
 interface MeshViewerScreenProps {
   modelUrl: string;
-  usdzUrl?: string;
   onUploadAnother: () => void;
 }
 
@@ -83,7 +83,6 @@ function ErrorFallback({ error }: { error: Error }) {
 
 export function MeshViewerScreen({
   modelUrl,
-  usdzUrl,
   onUploadAnother,
 }: MeshViewerScreenProps) {
   // Guard: Don't render if modelUrl is invalid
@@ -104,30 +103,117 @@ export function MeshViewerScreen({
   console.log('MeshViewerScreen: Rendering with modelUrl', modelUrl);
 
   const [showFormatSelector, setShowFormatSelector] = useState(false);
+  const [isConverting, setIsConverting] = useState(false);
+  const [conversionProgress, setConversionProgress] = useState(0);
 
-  const handleDownload = (format: ExportFormat) => {
-    let downloadUrl: string;
-
-    if (format === 'usdz' && usdzUrl) {
-      // Use direct USDZ URL if available
-      downloadUrl = `/api/proxy-model?url=${encodeURIComponent(usdzUrl)}`;
-      console.log('Using direct USDZ URL:', usdzUrl);
-    } else if (format === 'usdz') {
-      // Fallback: try to convert GLB to USDZ
-      downloadUrl = `/api/proxy-model?url=${encodeURIComponent(modelUrl)}&format=usdz`;
-      console.log('Converting GLB to USDZ:', modelUrl);
-    } else {
-      // GLB format
-      downloadUrl = `/api/proxy-model?url=${encodeURIComponent(modelUrl)}`;
+  const handleDownload = async (format: ExportFormat) => {
+    if (format === 'glb') {
+      // GLB - direct download
+      const downloadUrl = `/api/proxy-model?url=${encodeURIComponent(modelUrl)}`;
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = 'model.glb';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setShowFormatSelector(false);
+      return;
     }
 
-    const link = document.createElement('a');
-    link.href = downloadUrl;
-    link.download = `model.${format}`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    // USDZ - need to convert first
+    setIsConverting(true);
     setShowFormatSelector(false);
+    setConversionProgress(10);
+
+    try {
+      // Extract the original taskId from the GLB URL
+      // URL format: https://tmp.tripo3d.ai/..../[taskId].glb
+      const taskId = new URL(modelUrl).pathname.split('/').pop()?.replace('.glb', '');
+
+      if (!taskId) {
+        throw new Error('Could not extract task ID from model URL');
+      }
+
+      console.log('[USDZ-DOWNLOAD] Starting conversion for task:', taskId);
+      setConversionProgress(20);
+
+      // Step 1: Request USDZ conversion from Tripo
+      const conversionResponse = await fetch('/api/convert-to-usdz', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ taskId }),
+      });
+
+      if (!conversionResponse.ok) {
+        const errorData = await conversionResponse.json();
+        throw new Error(errorData.error || 'Conversion request failed');
+      }
+
+      const { taskId: conversionTaskId } = await conversionResponse.json();
+      console.log('[USDZ-DOWNLOAD] Conversion task created:', conversionTaskId);
+      setConversionProgress(40);
+
+      // Step 2: Poll status endpoint until conversion is complete
+      let usdzUrl: string | null = null;
+      let attempts = 0;
+      const maxAttempts = 30; // 30 seconds max (1 second intervals)
+
+      while (!usdzUrl && attempts < maxAttempts) {
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        attempts++;
+
+        const statusResponse = await fetch(`/api/status?taskId=${conversionTaskId}`);
+
+        if (!statusResponse.ok) {
+          throw new Error('Failed to check conversion status');
+        }
+
+        const statusData = await statusResponse.json();
+        console.log('[USDZ-DOWNLOAD] Status check:', statusData.status);
+
+        // Update progress based on status
+        if (statusData.status === 'running') {
+          setConversionProgress(Math.min(40 + attempts * 1.5, 85));
+        }
+
+        if (statusData.status === 'success' && statusData.modelUrl) {
+          usdzUrl = statusData.modelUrl;
+          setConversionProgress(95);
+          break;
+        }
+
+        if (statusData.status === 'failed') {
+          throw new Error('Conversion failed on Tripo servers');
+        }
+      }
+
+      if (!usdzUrl) {
+        throw new Error('Conversion timeout - please try again');
+      }
+
+      console.log('[USDZ-DOWNLOAD] Conversion complete, downloading:', usdzUrl);
+      setConversionProgress(100);
+
+      // Step 3: Download the USDZ file
+      const downloadUrl = `/api/proxy-model?url=${encodeURIComponent(usdzUrl)}`;
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = 'model.usdz';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      // Close the loading card after a brief delay
+      setTimeout(() => {
+        setIsConverting(false);
+        setConversionProgress(0);
+      }, 500);
+    } catch (error) {
+      console.error('[USDZ-DOWNLOAD] Error:', error);
+      alert(error instanceof Error ? error.message : 'Conversion failed');
+      setIsConverting(false);
+      setConversionProgress(0);
+    }
   };
 
   return (
@@ -299,6 +385,20 @@ export function MeshViewerScreen({
           </div>
         </div>
       </footer>
+
+      {/* Conversion Loading Overlay */}
+      <AnimatePresence>
+        {isConverting && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50"
+          >
+            <ConversionLoadingCard progress={conversionProgress} />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }

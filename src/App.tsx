@@ -109,22 +109,34 @@ function App() {
     }
   }
 
+
+  // Navigation handlers matching Figma prototype
   function handleReset() {
-    setScreen('HOME');
+    setScreen('UPLOAD'); // 'New Upload' always returns to Upload
     setImageDataUrl(null);
     setTaskId(null);
   }
 
   function handleGetStarted() {
-    setScreen('UPLOAD');
+    setScreen('UPLOAD'); // Home 'Get Started' goes to Upload
   }
 
   function handleBackFromUpload() {
-    setScreen('HOME');
+    setScreen('HOME'); // Upload back goes to Home
+    setImageDataUrl(null);
+    setTaskId(null);
   }
 
   function handleBackFromProcessing() {
-    setScreen('UPLOAD');
+    setScreen('UPLOAD'); // Processing back goes to Upload
+    setImageDataUrl(null);
+    setTaskId(null);
+  }
+
+  function handleErrorRetry() {
+    setScreen('UPLOAD'); // Error 'Try Again' and back go to Upload
+    setImageDataUrl(null);
+    setTaskId(null);
   }
 
   return (
@@ -157,7 +169,6 @@ function App() {
         <MeshViewerScreen
           key="mesh-viewer"
           modelUrl={jobStatus.asset.url}
-          usdzUrl={jobStatus.asset.usdzUrl}
           onUploadAnother={handleReset}
         />
       ) : screen === 'MESH_VIEWER' ? (
@@ -165,7 +176,7 @@ function App() {
         <ErrorScreen
           key="error-no-url"
           error="No model URL available"
-          onRetry={handleReset}
+          onRetry={handleErrorRetry}
         />
       ) : null}
 
@@ -173,7 +184,7 @@ function App() {
         <ErrorScreen
           key="error"
           error={jobStatus.error || 'Failed to generate 3D model'}
-          onRetry={handleReset}
+          onRetry={handleErrorRetry}
         />
       )}
     </AnimatePresence>
