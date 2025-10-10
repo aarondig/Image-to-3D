@@ -1,8 +1,8 @@
 import { motion } from 'framer-motion';
-import { PreviewCanvas } from '@/components/PreviewCanvas';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { Breadcrumb } from '@/components/layout/Breadcrumb';
+import { Box } from 'lucide-react';
 
 interface HomeScreenProps {
   onGetStarted: () => void;
@@ -31,15 +31,15 @@ export function HomeScreen({ onGetStarted }: HomeScreenProps) {
                 Photo 3D
               </h1>
               <p className="font-normal text-[16px] leading-[24px] text-neutral-400 w-full">
-                Transform any photo (under 10mb) into an interactive 3D model. Don't sue me.
+                Transform any photo (under 50mb) into an interactive 3D model. Don't sue me.
               </p>
             </div>
           </div>
 
           {/* Preview Card */}
           <div className="bg-[#1e1e1e] box-border flex flex-col gap-[24px] h-[270px] items-center justify-center px-0 py-[24px] relative rounded-[24px] shrink-0 w-full border border-neutral-800 shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
-            <div className="h-[201px] relative shrink-0 w-[192px]">
-              <PreviewCanvas modelUrl="/tripo_pbr_model_1788b5ec-a74f-49d5-882e-2013a09e4894.glb" />
+            <div className="h-[201px] relative shrink-0 w-[192px] flex items-center justify-center">
+              <Box className="h-24 w-24 text-neutral-600" strokeWidth={1.5} />
             </div>
           </div>
 
