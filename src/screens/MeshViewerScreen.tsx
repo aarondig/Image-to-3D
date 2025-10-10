@@ -3,7 +3,7 @@ import '@react-three/fiber';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Environment, useGLTF, Center } from '@react-three/drei';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowDown, Linkedin, ArrowUpRight, X } from 'lucide-react';
+import { ArrowDown, ArrowUpRight, X } from 'lucide-react';
 import { ErrorBoundary } from 'react-error-boundary';
 import { Header } from '@/components/layout/Header';
 import { safeHref } from '@/lib/safeUrl';
@@ -19,7 +19,7 @@ function Model({ url }: { url: string }) {
   // Guard: Don't even try to load if URL is invalid
   if (!url || typeof url !== 'string' || url.trim() === '') {
     console.error('Model: Invalid URL provided', url);
-    return <Loader />;
+    throw new Error('Invalid model URL provided');
   }
 
   const proxyUrl = `/api/proxy-model?url=${encodeURIComponent(url)}`;
@@ -28,15 +28,16 @@ function Model({ url }: { url: string }) {
   let gltf;
   try {
     gltf = useGLTF(proxyUrl);
-    console.log('Model: GLTF loaded', { hasGltf: !!gltf, hasScene: !!gltf?.scene, scene: gltf?.scene });
   } catch (error) {
     console.error('Model: useGLTF threw error', error);
-    throw error; // Re-throw to be caught by ErrorBoundary
+    throw new Error('Failed to load 3D model');
   }
+
+  console.log('Model: GLTF loaded', { hasGltf: !!gltf, hasScene: !!gltf?.scene });
 
   if (!gltf || !gltf.scene) {
     console.error('GLTF scene is undefined', { gltf, hasGltf: !!gltf });
-    return <Loader />;
+    throw new Error('Model scene is undefined');
   }
 
   // Extra safety: Clone the scene to avoid reference issues
@@ -69,12 +70,20 @@ function Loader() {
   );
 }
 
-function ErrorFallback({ error }: { error: Error }) {
+function ErrorFallback({ error, resetErrorBoundary }: { error: Error; resetErrorBoundary?: () => void }) {
   return (
-    <div className="flex h-full w-full items-center justify-center">
-      <div className="rounded-lg border border-destructive bg-destructive/10 p-4 text-center">
-        <p className="text-sm text-destructive">Failed to load 3D model</p>
-        <p className="mt-1 text-xs text-muted-foreground">{error.message}</p>
+    <div className="flex h-full w-full items-center justify-center p-8">
+      <div className="rounded-2xl border border-red-800 bg-red-950/20 p-6 text-center max-w-md">
+        <p className="text-base font-semibold text-red-400 mb-2">Failed to load 3D model</p>
+        <p className="text-sm text-neutral-400 mb-4">{error.message || 'An unknown error occurred'}</p>
+        {resetErrorBoundary && (
+          <button
+            onClick={resetErrorBoundary}
+            className="bg-neutral-800 border border-neutral-700 rounded-full px-4 py-2 hover:bg-neutral-700 transition-colors"
+          >
+            <p className="text-sm font-medium text-neutral-50">Try Again</p>
+          </button>
+        )}
       </div>
     </div>
   );
@@ -190,7 +199,10 @@ export function MeshViewerScreen({
         {/* 3D Canvas */}
         <div className="flex-1 relative min-h-[400px]">
           <div className="absolute inset-0">
-            <ErrorBoundary FallbackComponent={ErrorFallback}>
+            <ErrorBoundary
+              FallbackComponent={ErrorFallback}
+              onReset={() => window.location.reload()}
+            >
               <Canvas
                 camera={{ position: [0, 0, 5], fov: 50 }}
                 style={{ touchAction: 'none' }}
@@ -230,9 +242,9 @@ export function MeshViewerScreen({
                 href={safeHref("https://linkedin.com/in/aarondiggdon")}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-center w-9 h-9 rounded-full border-[1.125px] border-neutral-700 hover:bg-neutral-800 transition-colors"
+                className="flex items-center justify-center w-9 h-9 rounded-full border-[1.125px] border-neutral-700 hover:bg-neutral-800 transition-colors group"
               >
-                <Linkedin className="w-[22px] h-[22px] text-neutral-50" />
+                <img src="/icons/linkedin.svg" alt="LinkedIn" className="h-[22px] w-[22px] transition-all group-hover:brightness-75" />
               </a>
               <a
                 href={safeHref("https://aarondig.com")}
