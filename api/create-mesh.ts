@@ -114,8 +114,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     console.log('File uploaded, token:', fileToken);
 
-    // Step 2: Create image_to_model task with TripoSR (free tier)
-    const quality = options?.quality === 'high' ? 'high' : 'fast';
+    // Step 2: Create image_to_model task with Tripo3D
+    const quality = options?.quality === 'high' ? 'high' : 'preview';
 
     const taskPayload = {
       type: 'image_to_model',
@@ -123,13 +123,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         type: 'jpg',
         file_token: fileToken,
       },
-      model_version: 'v2.0-20240919', // TripoSR model (free tier)
-      ...(quality && { mode: quality }),
+      // No model_version = uses default Tripo3D model
+      mode: quality,
       // Only request GLB by default - USDZ converted on-demand to save credits
     };
 
-    console.log('📤 [CREATE-MESH] Creating TripoSR job with payload:', JSON.stringify(taskPayload, null, 2));
-    console.log('📤 [CREATE-MESH] Using model_version:', taskPayload.model_version, '(TripoSR free tier)');
+    console.log('📤 [CREATE-MESH] Creating Tripo3D job with payload:', JSON.stringify(taskPayload, null, 2));
 
     const tripoResponse = await fetch(`${tripoApiBase}/task`, {
       method: 'POST',
@@ -140,11 +139,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       body: JSON.stringify(taskPayload),
     });
 
-    console.log('📥 [CREATE-MESH] TripoSR API response status:', tripoResponse.status);
+    console.log('📥 [CREATE-MESH] Tripo3D API response status:', tripoResponse.status);
 
     if (!tripoResponse.ok) {
       const errorText = await tripoResponse.text();
-      console.error('❌ [CREATE-MESH] TripoSR API error:', tripoResponse.status, errorText);
+      console.error('❌ [CREATE-MESH] Tripo3D API error:', tripoResponse.status, errorText);
 
       // Map Tripo error codes
       if (tripoResponse.status === 402) {
@@ -158,23 +157,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const data = await tripoResponse.json();
-    console.log('📦 [CREATE-MESH] TripoSR full response:', JSON.stringify(data, null, 2));
+    console.log('📦 [CREATE-MESH] Tripo3D full response:', JSON.stringify(data, null, 2));
 
     const taskId = data.data?.task_id || data.task_id;
 
-    // Create job metadata for fallback tracking
-    createJob(taskId, 'tripoSR', image);
+    // Create job metadata for tracking
+    createJob(taskId);
 
     // Increment usage count on successful job creation
     incrementUsage(sessionId);
 
-    console.log('✅ [CREATE-MESH] Job created successfully - taskId:', taskId, 'provider: tripoSR');
+    console.log('✅ [CREATE-MESH] Job created successfully - taskId:', taskId);
 
     // Return taskId and status
     return res.status(202).json({
       taskId,
       status: 'QUEUED',
-      provider: 'tripoSR',
       etaSeconds: 60,
     });
   } catch (error) {

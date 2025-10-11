@@ -4,9 +4,9 @@
 A web app that converts a single uploaded photo into a fully downloadable, shareable 3D model.
 
 Prioritizes:
-- **Speed** – near-instant upload + clear generation feedback  
-- **Simplicity** – one-click creation & sharing  
-- **Resilience** – TripoSR primary with intelligent fallback behavior  
+- **Speed** – near-instant upload + clear generation feedback
+- **Simplicity** – one-click creation & sharing
+- **Quality** – Tripo3D for high-quality mesh generation
 - **Expandability** – future gallery & animation support
 
 ## 2. Key User Stories
@@ -65,7 +65,7 @@ Prioritizes:
 
 ### Core (MVP, implemented in main)
 - Upload ≤ 50 MB → **client auto-resize** (`imageResize.ts`)
-- **TripoSR** job creation via `POST /api/create-mesh`
+- **Tripo3D** job creation via `POST /api/create-mesh`
 - **Real-time polling** via `GET /api/status`
 - **3D preview** in `MeshViewerScreen.tsx`
 - **Download / open model** from `asset.url` (with `api/proxy-model.ts` for CORS)

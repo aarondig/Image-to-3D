@@ -1,13 +1,15 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { HomeScreen } from './screens/HomeScreen';
 import { UploadScreen } from './screens/UploadScreen';
 import { ProcessingScreen } from './screens/ProcessingScreen';
-import { MeshViewerScreen } from './screens/MeshViewerScreen';
 import { ErrorScreen } from './screens/ErrorScreen';
 import { useMeshJob } from './hooks/useMeshJob';
 import type { CreateMeshResponse } from './types/api';
 import type { Screen } from './types/screens';
+
+// Lazy load heavy 3D viewer component
+const MeshViewerScreen = lazy(() => import('./screens/MeshViewerScreen').then(m => ({ default: m.MeshViewerScreen })));
 
 function App() {
   const [screen, setScreen] = useState<Screen>('HOME');
@@ -28,116 +30,95 @@ function App() {
     return () => clearInterval(timer);
   }, [nextAllowedAt]);
 
-  // Auto-transition screens based on job status (using useEffect to avoid render-time state updates)
+  // Auto-transition screens based on job status
   useEffect(() => {
     const status = jobStatus.status;
     const assetUrl = jobStatus.asset?.url;
 
-    console.log('App: Job status changed', { status, assetUrl, currentScreen: screen });
-
     if (status === 'RUNNING' || status === 'QUEUED') {
       if (screen !== 'PROCESSING') {
-        console.log('App: Transitioning to PROCESSING');
         setScreen('PROCESSING');
       }
     } else if (status === 'SUCCEEDED' && assetUrl) {
       if (screen !== 'MESH_VIEWER') {
-        console.log('App: Transitioning to MESH_VIEWER with URL', assetUrl);
         setScreen('MESH_VIEWER');
       }
     } else if (status === 'FAILED' || status === 'TIMEOUT') {
       if (screen !== 'ERROR') {
-        console.log('App: Transitioning to ERROR');
         setScreen('ERROR');
       }
     }
   }, [jobStatus.status, jobStatus.asset?.url, screen]);
 
   async function handleImageSelected(dataUrl: string) {
-    // Guard: Check cooldown
     const now = Date.now();
-    if (now < nextAllowedAt) {
-      console.log('App: Cooldown active, ignoring request');
-      return;
-    }
+    if (now < nextAllowedAt) return;
 
-    // Guard: Validate dataUrl before processing
-    if (!dataUrl || typeof dataUrl !== 'string' || dataUrl.trim() === '') {
-      console.error('App: Invalid image data URL');
+    if (!dataUrl?.trim()) {
       setScreen('ERROR');
       return;
     }
 
-    // Set cooldown (30 seconds)
     setNextAllowedAt(now + 30000);
-
     setImageDataUrl(dataUrl);
     setScreen('PROCESSING');
 
     try {
       const response = await fetch('/api/create-mesh', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include', // Important: send cookies for credit tracking
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({
           image: dataUrl,
           options: {
             target_format: 'glb',
-            quality: 'high', // Always use high quality (768px)
+            quality: 'high',
           },
         }),
       });
 
       if (!response.ok) {
         const error = await response.json();
-
-        // Handle credit limit exceeded
         if (response.status === 402) {
           throw new Error(error.detail || 'Daily generation limit reached. Try again tomorrow.');
         }
-
         throw new Error(error.error || 'Failed to create mesh job');
       }
 
       const data: CreateMeshResponse = await response.json();
       setTaskId(data.taskId);
     } catch (error) {
-      console.error('Error submitting image:', error);
       setScreen('ERROR');
     }
   }
 
 
-  // Navigation handlers matching Figma prototype
-  function handleReset() {
-    setScreen('HOME'); // Reset to home page
+  // Navigation handlers
+  const handleReset = () => {
+    setScreen('UPLOAD');
     setImageDataUrl(null);
     setTaskId(null);
-  }
+  };
 
-  function handleGetStarted() {
-    setScreen('UPLOAD'); // Home 'Get Started' goes to Upload
-  }
+  const handleGetStarted = () => setScreen('UPLOAD');
 
-  function handleBackFromUpload() {
-    setScreen('HOME'); // Upload back goes to Home
+  const handleBackFromUpload = () => {
+    setScreen('HOME');
     setImageDataUrl(null);
     setTaskId(null);
-  }
+  };
 
-  function handleBackFromProcessing() {
-    setScreen('UPLOAD'); // Processing back goes to Upload
+  const handleBackFromProcessing = () => {
+    setScreen('UPLOAD');
     setImageDataUrl(null);
     setTaskId(null);
-  }
+  };
 
-  function handleErrorRetry() {
-    setScreen('UPLOAD'); // Error 'Try Again' and back go to Upload
+  const handleErrorRetry = () => {
+    setScreen('UPLOAD');
     setImageDataUrl(null);
     setTaskId(null);
-  }
+  };
 
   return (
     <AnimatePresence mode="wait">
@@ -166,11 +147,13 @@ function App() {
       )}
 
       {screen === 'MESH_VIEWER' && jobStatus.asset?.url ? (
-        <MeshViewerScreen
-          key="mesh-viewer"
-          modelUrl={jobStatus.asset.url}
-          onUploadAnother={handleReset}
-        />
+        <Suspense fallback={<ProcessingScreen key="loading" image={imageDataUrl || ''} progress={1} status="Loading 3D viewer..." />}>
+          <MeshViewerScreen
+            key="mesh-viewer"
+            modelUrl={jobStatus.asset.url}
+            onUploadAnother={handleReset}
+          />
+        </Suspense>
       ) : screen === 'MESH_VIEWER' ? (
         /* If we're on MESH_VIEWER screen but no URL, show error */
         <ErrorScreen

@@ -1,8 +1,8 @@
-# Feature Addendum: Transparent Loading System + API Fallback (v3.1)
+# Feature Addendum: Transparent Loading System (v4.0)
 
 ## Context
-This feature defines a **multi-stage, transparent loading experience** for users uploading photos for 3D generation.  
-It ensures that users understand each stage of processing (e.g., uploading, queueing, depth estimation, texturing) and can **see fallback logic** in real time when the primary engine (TripoSR) experiences queue delays.
+This feature defines a **multi-stage, transparent loading experience** for users uploading photos for 3D generation using Tripo3D.
+It ensures that users understand each stage of processing (e.g., uploading, queueing, depth estimation, texturing) through clear visual feedback.
 
 It directly connects to the APIs implemented in `/api/create-mesh.ts` and `/api/status.ts` and is rendered through the React frontend (`ProcessingScreen.tsx` + `useMeshJob.ts`).
 
@@ -10,23 +10,23 @@ It directly connects to the APIs implemented in `/api/create-mesh.ts` and `/api/
 
 ## 1. Feature Overview
 
-**Feature Name:** Transparent Multi-Stage Loading System with Engine Fallback  
-**Goal:** Increase user trust and perceived speed by exposing detailed generation stages, progress segments, and live fallback timing.  
-**Primary Interaction:** Display stage-by-stage progress UI from upload → ready state, including a visible **queue countdown** from TripoSR → Tripo3D backup.
+**Feature Name:** Transparent Multi-Stage Loading System
+**Goal:** Increase user trust and perceived speed by exposing detailed generation stages and progress segments.
+**Primary Interaction:** Display stage-by-stage progress UI from upload → ready state.
 
-This system simulates sub-stage progress (depth estimation, reconstruction, etc.) based on API feedback and interpolated timing windows, while preserving transparency about which engine and queue the job is currently using.
+This system simulates sub-stage progress (depth estimation, reconstruction, etc.) based on API feedback and interpolated timing windows to provide clear feedback during the generation process.
 
 ---
 
 ## 2. Problem Statement
 
-The current MVP presents a generic “Generating Mesh” loader with minimal transparency, causing users to:
+The current MVP presents a generic "Generating Mesh" loader with minimal transparency, causing users to:
 
 - Misinterpret delays as failure.
-- Leave before fallback completes.
+- Leave before generation completes.
 - Lack understanding of backend process complexity.
 
-**Goal:** Introduce a visible, educational progress experience that makes latency and fallback behavior explicit without increasing perceived wait time.
+**Goal:** Introduce a visible, educational progress experience that makes the generation process transparent without increasing perceived wait time.
 
 ---
 
@@ -34,10 +34,10 @@ The current MVP presents a generic “Generating Mesh” loader with minimal tra
 
 | Layer | Implementation | Description |
 |-------|----------------|--------------|
-| **Frontend** | React + TypeScript (`ProcessingScreen.tsx`, `useMeshJob.ts`) | State machine-driven progress UI with countdown timer and engine switching. |
-| **Backend** | Vercel Node Functions (`/api/create-mesh.ts`, `/api/status.ts`) | Orchestrates TripoSR and Tripo3D jobs, normalizes job states, and reports queue ETA or fallback threshold. |
-| **External APIs** | TripoSR API + Tripo3D API | Used for mesh creation, status polling, and engine fallback. |
-| **Config** | `src/config.ts` | Centralized fallback thresholds, simulated phase durations, and polling intervals. |
+| **Frontend** | React + TypeScript (`ProcessingScreen.tsx`, `useMeshJob.ts`) | State machine-driven progress UI showing generation stages. |
+| **Backend** | Vercel Node Functions (`/api/create-mesh.ts`, `/api/status.ts`) | Orchestrates Tripo3D jobs, normalizes job states, and reports progress. |
+| **External APIs** | Tripo3D API | Used for mesh creation and status polling. |
+| **Config** | `src/config.ts` | Centralized simulated phase durations and polling intervals. |
 
 ---
 
@@ -45,11 +45,10 @@ The current MVP presents a generic “Generating Mesh” loader with minimal tra
 
 ### 4.1 `/api/create-mesh`
 
-**Purpose:** Create a new mesh generation job.  
+**Purpose:** Create a new mesh generation job using Tripo3D.
 **Flow:**
 - Accepts base64-encoded image (≤ 50 MB).
-- Submits job to **TripoSR** by default.
-- If job creation is delayed or queue exceeds threshold (e.g., > 16s), fallback to **Tripo3D**.
+- Submits job to **Tripo3D**.
 - Returns a job identifier and initial metadata.
 
 **Request:**
@@ -57,65 +56,60 @@ The current MVP presents a generic “Generating Mesh” loader with minimal tra
 POST /api/create-mesh
 {
   "image": "<base64 string>",
-  "engine": "tripo-sr" | "tripo-3d"
+  "options": {
+    "quality": "high" | "preview"
+  }
 }
 ```
 
 **Response:**
 ```json
 {
-  "jobId": "abc123",
-  "engine": "tripo-sr",
-  "status": "queued",
-  "etaSeconds": 16,
-  "position": 5
+  "taskId": "abc123",
+  "status": "QUEUED",
+  "etaSeconds": 60
 }
 ```
-
-**Notes:**
-- Engine defaults to `tripo-sr`.
-- The function internally stores engine metadata and fallback eligibility.
-- If SR queue > fallback threshold, job switches to Tripo3D transparently and frontend is notified on the next poll.
 
 ---
 
 ### 4.2 `/api/status`
 
-**Purpose:** Polls Tripo job status, normalizing returned progress and engine info.  
+**Purpose:** Polls Tripo job status, normalizing returned progress.
 **Flow:**
-- Returns normalized job object with engine, stage, and progress (0–1).
-- Provides optional queue info (ETA, position, engine switch flag).
+- Returns normalized job object with status and progress (0–1).
+- Provides asset URL when generation is complete.
 
 **Request:**
 ```http
-GET /api/status?jobId=abc123
+GET /api/status?id=abc123
 ```
 
 **Response:**
 ```json
 {
-  "jobId": "abc123",
-  "engine": "tripo-sr",
-  "status": "processing",
+  "taskId": "abc123",
+  "status": "RUNNING",
   "progress": 0.42,
-  "phase": "texturing",
-  "queue": {
-    "etaSeconds": 12,
-    "position": 3
-  },
-  "fallbackTriggered": false,
-  "assetUrl": null
+  "message": "Generating mesh... 42%",
+  "asset": null,
+  "error": null
 }
 ```
 
-**If fallback triggered:**
+**When complete:**
 ```json
 {
-  "engine": "tripo-3d",
-  "status": "processing",
-  "progress": 0.46,
-  "phase": "preprocessing",
-  "fallbackTriggered": true
+  "taskId": "abc123",
+  "status": "SUCCEEDED",
+  "progress": 1.0,
+  "message": "Mesh generation complete",
+  "asset": {
+    "url": "https://tripo-data.rg1.data.tripo3d.com/...",
+    "format": "glb",
+    "sizeBytes": 0
+  },
+  "error": null
 }
 ```
 
@@ -133,7 +127,6 @@ GET /api/status?jobId=abc123
 
 ### Hook Structure
 ```ts
-export type Engine = 'tripo-sr' | 'tripo-3d';
 export type Phase =
   | 'uploading'
   | 'queued'
@@ -150,9 +143,8 @@ export type Phase =
 ### Hook Behavior
 - Begins polling on job start.
 - Initializes `Queued` phase immediately after `/api/create-mesh`.
-- Tracks `secondsUntilFallback` (16s default) during `Queued`.
-- Auto-triggers fallback to Tripo3D when timer expires or API signals fallback.
 - Smoothly transitions phases for realism (using `phaseDurationsMs`).
+- Provides progress updates based on API responses.
 
 ---
 
@@ -163,7 +155,7 @@ export type Phase =
 | **State / UI Label** | **Supporting Line (5–8 words)** |
 |-----------------------|--------------------------------|
 | **Uploading** | Optimizing and encoding image data for processing |
-| **Queued** | Awaiting processing slot · fallback in {MM:SS} |
+| **Queued** | Awaiting processing slot in generation queue |
 | **Preprocessing** | Normalizing color and lighting data |
 | **Depth Estimation** | Generating surface map from single photo |
 | **Mesh Reconstruction** | Converting depth map into 3D geometry |
@@ -172,19 +164,11 @@ export type Phase =
 | **Finalizing** | Validating file integrity and upload success |
 | **Ready** | 3D preview available · tap to view |
 
-### Fallback Behavior
-If TripoSR queue delay exceeds 16 seconds (configurable), the UI updates:
-- Label: `Engine: Tripo3D (fallback)`
-- Stage resets to “Preprocessing”
-- Countdown disappears
-- New progress sequence continues normally
-
-### Visual Design Notes (match Figma)
+### Visual Design Notes
 - **9-segment progress bar:** Each stage corresponds to one segment. Filled segments = completed stages; active stage pulses subtly.
-- **Queue indicator:** Displays countdown and queue position side by side.
 - **Top header:** Current stage title.
 - **Footer:** Cancel / Retry buttons.
-- **Fallback alert:** Light toast “Switched to backup engine for faster processing.”
+- **Status message:** Shows current progress percentage and stage description.
 
 ---
 
@@ -192,7 +176,6 @@ If TripoSR queue delay exceeds 16 seconds (configurable), the UI updates:
 
 In `src/config.ts`:
 ```ts
-export const srQueueFallbackSeconds = 16;
 export const pollIntervalMs = 5000;
 
 export const phaseDurationsMs = {
@@ -214,19 +197,15 @@ export const phaseDurationsMs = {
         ↓
 Local Resize (imageResize.ts)
         ↓
-POST /api/create-mesh → engine=tripo-sr
+POST /api/create-mesh → Tripo3D job created
         ↓
-Frontend enters `Queued` (16s countdown)
-        ↓
-[TripoSR Queue Response]
-  ├── If <16s → Continue with SR
-  └── If >16s → Fallback to Tripo3D
+Frontend enters `Queued` state
         ↓
 Polling /api/status every 5s
         ↓
 Frontend cycles through phase states
         ↓
-GET /api/status → {status: 'completed', assetUrl}
+GET /api/status → {status: 'SUCCEEDED', asset: {...}}
         ↓
 Viewer opens → Download/Share options
 ```
@@ -239,8 +218,8 @@ Viewer opens → Download/Share options
 |-------------|----------|
 | **@react-three/fiber / drei** | 3D model rendering after generation |
 | **Framer Motion** | Progress bar animation + fade transitions |
-| **React Query or custom polling** | Fetch job status updates from `/api/status` |
-| **TripoSR / Tripo3D APIs** | Core generation engines |
+| **Custom polling (useMeshJob)** | Fetch job status updates from `/api/status` |
+| **Tripo3D API** | Core generation engine |
 | **Vercel KV (Future)** | For storing job metadata + asset history |
 | **Web Share API (Future)** | For sharing generated USDZ assets |
 
@@ -251,19 +230,19 @@ Viewer opens → Download/Share options
 | Metric | Target |
 |---------|--------|
 | Time-to-feedback | < 3 seconds |
-| Visible queue transparency | 100% jobs show queue countdown |
-| Fallback trigger accuracy | 100% of SR queues >16s trigger fallback |
+| Visible progress transparency | 100% jobs show clear stage progression |
 | Job completion success | ≥ 95% |
 | User retry rate (error state) | < 3% |
+| Average generation time | 30-90 seconds |
 
 ---
 
 ## 11. Implementation Checklist
 
-✅ Extend `useMeshJob.ts` with phase machine + countdown  
-✅ Update `ProcessingScreen.tsx` UI per Figma (9 segments, labels, countdown)  
-✅ Modify `/api/create-mesh.ts` for engine param + fallback logic  
-✅ Update `/api/status.ts` to include queue info + fallbackTriggered  
-✅ Add constants to `config.ts`  
-✅ Write error copy + retry flows  
-✅ Validate progress + fallback logic across TripoSR and Tripo3D
+✅ Extend `useMeshJob.ts` with phase machine
+✅ Update `ProcessingScreen.tsx` UI with 9-segment progress bar and stage labels
+✅ Simplify `/api/create-mesh.ts` to use Tripo3D only
+✅ Simplify `/api/status.ts` to remove fallback logic
+✅ Add constants to `config.ts`
+✅ Write error copy + retry flows
+✅ Validate progress logic with Tripo3D API
