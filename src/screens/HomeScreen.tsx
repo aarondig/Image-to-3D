@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { Breadcrumb } from '@/components/layout/Breadcrumb';
-import { Box } from 'lucide-react';
+import { PreviewModel } from '@/components/ui/PreviewModel';
 
 interface HomeScreenProps {
   onGetStarted: () => void;
@@ -15,9 +15,9 @@ export function HomeScreen({ onGetStarted }: HomeScreenProps) {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.3 }}
-      className="flex flex-col items-start relative w-full min-h-screen"
+      className="bg-[#141414] flex flex-col items-start relative w-full min-h-screen"
     >
-      <Header />
+      <Header onLogoClick={onGetStarted} />
 
       <Breadcrumb items={['Upload', 'Generate', 'View']} activeIndex={-1} />
 
@@ -31,15 +31,15 @@ export function HomeScreen({ onGetStarted }: HomeScreenProps) {
                 Photo 3D
               </h1>
               <p className="font-normal text-[16px] leading-[24px] text-neutral-400 w-full">
-                Transform any photo (under 50mb) into an interactive 3D model. Don't sue me.
+                Transform any photo (under 10mb) into an interactive 3D model. Don't sue me.
               </p>
             </div>
           </div>
 
           {/* Preview Card */}
-          <div className="bg-[#1e1e1e] box-border flex flex-col gap-[24px] h-[270px] items-center justify-center px-0 py-[24px] relative rounded-[24px] shrink-0 w-full border border-neutral-800 shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
-            <div className="h-[201px] relative shrink-0 w-[192px] flex items-center justify-center">
-              <Box className="h-24 w-24 text-neutral-600" strokeWidth={1.5} />
+          <div className="bg-[#1e1e1e] box-border relative h-[270px] rounded-[24px] shrink-0 w-full border border-neutral-800 shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
+            <div className="absolute inset-0">
+              <PreviewModel />
             </div>
           </div>
 

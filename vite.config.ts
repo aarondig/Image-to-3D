@@ -21,4 +21,12 @@ export default defineConfig({
   optimizeDeps: {
     include: ['three', 'three-stdlib', 'react', 'react-dom'],
   },
+  server: {
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+    },
+  },
 });

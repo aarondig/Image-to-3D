@@ -109,9 +109,9 @@ export function UploadScreen({ onImageSelected, onBack, cooldownSeconds = 0 }: U
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.3 }}
-      className="min-h-screen flex flex-col"
+      className="bg-[#141414] min-h-screen flex flex-col"
     >
-      <Header />
+      <Header onLogoClick={onBack} />
 
       <Breadcrumb items={['Upload', 'Generate', 'View']} activeIndex={0} showBack onBack={onBack} />
 

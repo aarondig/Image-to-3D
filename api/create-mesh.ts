@@ -123,12 +123,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         type: 'jpg',
         file_token: fileToken,
       },
-      model_version: 'v2.0-20240919', // TripoSR model
+      model_version: 'v2.0-20240919', // TripoSR model (free tier)
       ...(quality && { mode: quality }),
       // Only request GLB by default - USDZ converted on-demand to save credits
     };
 
     console.log('📤 [CREATE-MESH] Creating TripoSR job with payload:', JSON.stringify(taskPayload, null, 2));
+    console.log('📤 [CREATE-MESH] Using model_version:', taskPayload.model_version, '(TripoSR free tier)');
 
     const tripoResponse = await fetch(`${tripoApiBase}/task`, {
       method: 'POST',

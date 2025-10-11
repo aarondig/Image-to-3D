@@ -112,7 +112,7 @@ function App() {
 
   // Navigation handlers matching Figma prototype
   function handleReset() {
-    setScreen('UPLOAD'); // 'New Upload' always returns to Upload
+    setScreen('HOME'); // Reset to home page
     setImageDataUrl(null);
     setTaskId(null);
   }

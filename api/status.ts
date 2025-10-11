@@ -283,7 +283,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Check if we need to trigger fallback
     if (job && normalized.status === 'QUEUED') {
       const queueWaitMs = getQueueWaitMs(job);
+      const disableFallback = process.env.DISABLE_FALLBACK === 'true';
       console.log(`⏱️  [STATUS] Queue wait time: ${queueWaitMs}ms`);
+      console.log(`⏱️  [STATUS] DISABLE_FALLBACK env var:`, process.env.DISABLE_FALLBACK, '| Parsed:', disableFallback);
 
       if (shouldTriggerFallback(job)) {
         console.log(`🚨 [STATUS] Fallback threshold reached! Triggering fallback to Tripo3D`);

@@ -22,16 +22,17 @@ function Model({ url }: { url: string }) {
     throw new Error('Invalid model URL provided');
   }
 
+  // Proxy the URL to avoid CORS issues
   const proxyUrl = `/api/proxy-model?url=${encodeURIComponent(url)}`;
   console.log('Model: Loading from proxyUrl', proxyUrl);
 
-  let gltf;
-  try {
-    gltf = useGLTF(proxyUrl);
-  } catch (error) {
-    console.error('Model: useGLTF threw error', error);
-    throw new Error('Failed to load 3D model');
-  }
+  // useGLTF uses Suspense, so it will suspend while loading
+  // If there's an error, it will throw and be caught by ErrorBoundary
+  const gltf = useGLTF(proxyUrl, true, true, (loader) => {
+    loader.manager.onError = (itemUrl) => {
+      console.error('Model: THREE loader error for', itemUrl);
+    };
+  });
 
   console.log('Model: GLTF loaded', { hasGltf: !!gltf, hasScene: !!gltf?.scene });
 
@@ -52,11 +53,10 @@ function Model({ url }: { url: string }) {
 
 // Preload the model to avoid issues
 function PreloadModel({ url }: { url: string }) {
-  const proxyUrl = `/api/proxy-model?url=${encodeURIComponent(url)}`;
-
   useEffect(() => {
+    const proxyUrl = `/api/proxy-model?url=${encodeURIComponent(url)}`;
     useGLTF.preload(proxyUrl);
-  }, [proxyUrl]);
+  }, [url]);
 
   return null;
 }
@@ -133,7 +133,7 @@ export function MeshViewerScreen({
       className="relative min-h-screen flex flex-col bg-[#141414]"
     >
       {/* Header */}
-      <Header />
+      <Header onLogoClick={onUploadAnother} />
 
       {/* Preload model */}
       <PreloadModel url={modelUrl} />

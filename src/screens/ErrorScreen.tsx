@@ -45,7 +45,7 @@ export function ErrorScreen({ error, onRetry }: ErrorScreenProps) {
       transition={{ duration: 0.3 }}
       className="min-h-screen flex flex-col"
     >
-      <Header />
+      <Header onLogoClick={onRetry} />
 
       {/* Secondary Header with Back Button */}
       <div className="bg-neutral-900 relative shrink-0 w-full border-b border-neutral-800 max-h-[60px]">

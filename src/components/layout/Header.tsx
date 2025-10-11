@@ -1,10 +1,16 @@
-export function Header() {
+interface HeaderProps {
+  onLogoClick?: () => void;
+}
 
+export function Header({ onLogoClick }: HeaderProps) {
   return (
     <header className="bg-neutral-900 relative shrink-0 w-full border-b border-neutral-800">
       <div className="box-border flex flex-wrap items-center justify-between overflow-clip p-[24px] relative w-full">
         {/* Logo */}
-        <button className="block cursor-pointer overflow-clip relative shrink-0 size-[32px]">
+        <button 
+          onClick={onLogoClick}
+          className="block cursor-pointer overflow-clip relative shrink-0 size-[32px]"
+        >
           <div className="absolute left-[1.63px] size-[28.75px] top-[1.63px]">
             <img src="/icons/logo.svg" alt="Logo" className="w-full h-full" />
           </div>

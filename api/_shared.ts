@@ -141,6 +141,13 @@ export function updateJob(taskId: string, updates: Partial<JobMetadata>): JobMet
 }
 
 export function shouldTriggerFallback(job: JobMetadata): boolean {
+  // Check if fallback is disabled via environment variable (for testing)
+  const fallbackDisabled = process.env.DISABLE_FALLBACK === 'true';
+  if (fallbackDisabled) {
+    console.log('⚠️ [FALLBACK] Fallback disabled via DISABLE_FALLBACK env var');
+    return false;
+  }
+
   if (job.fallback.attempted) {
     return false;
   }
@@ -150,7 +157,9 @@ export function shouldTriggerFallback(job: JobMetadata): boolean {
   }
 
   const queueWaitMs = Date.now() - job.queueStartedAt;
-  const threshold = 10000; // 10 seconds
+  const threshold = parseInt(process.env.FALLBACK_THRESHOLD_MS || '16000'); // 16 seconds default
+
+  console.log(`[FALLBACK] Queue wait: ${queueWaitMs}ms, threshold: ${threshold}ms`);
 
   return queueWaitMs >= threshold;
 }
