@@ -7,6 +7,7 @@ import { ArrowDown, ArrowUpRight, X } from 'lucide-react';
 import { ErrorBoundary } from 'react-error-boundary';
 import { Header } from '@/components/layout/Header';
 import { safeHref } from '@/lib/safeUrl';
+import { cardVariants } from '@/utils/transitions';
 
 type ExportFormat = 'glb';
 
@@ -16,37 +17,20 @@ interface MeshViewerScreenProps {
 }
 
 function Model({ url }: { url: string }) {
-  // Guard: Don't even try to load if URL is invalid
-  if (!url || typeof url !== 'string' || url.trim() === '') {
-    console.error('Model: Invalid URL provided', url);
+  if (!url?.trim()) {
     throw new Error('Invalid model URL provided');
   }
 
-  // Proxy the URL to avoid CORS issues
   const proxyUrl = `/api/proxy-model?url=${encodeURIComponent(url)}`;
-  console.log('Model: Loading from proxyUrl', proxyUrl);
+  const gltf = useGLTF(proxyUrl, true, true);
 
-  // useGLTF uses Suspense, so it will suspend while loading
-  // If there's an error, it will throw and be caught by ErrorBoundary
-  const gltf = useGLTF(proxyUrl, true, true, (loader) => {
-    loader.manager.onError = (itemUrl) => {
-      console.error('Model: THREE loader error for', itemUrl);
-    };
-  });
-
-  console.log('Model: GLTF loaded', { hasGltf: !!gltf, hasScene: !!gltf?.scene });
-
-  if (!gltf || !gltf.scene) {
-    console.error('GLTF scene is undefined', { gltf, hasGltf: !!gltf });
+  if (!gltf?.scene) {
     throw new Error('Model scene is undefined');
   }
 
-  // Extra safety: Clone the scene to avoid reference issues
-  const scene = gltf.scene.clone();
-
   return (
     <Center>
-      <primitive object={scene} />
+      <primitive object={gltf.scene.clone()} />
     </Center>
   );
 }
@@ -93,9 +77,9 @@ export function MeshViewerScreen({
   modelUrl,
   onUploadAnother,
 }: MeshViewerScreenProps) {
-  // Guard: Don't render if modelUrl is invalid
-  if (!modelUrl || typeof modelUrl !== 'string' || modelUrl.trim() === '') {
-    console.error('MeshViewerScreen: Invalid modelUrl', modelUrl);
+  const [showFormatSelector, setShowFormatSelector] = useState(false);
+
+  if (!modelUrl?.trim()) {
     return (
       <div className="flex h-svh w-full items-center justify-center">
         <div className="rounded-lg border border-destructive bg-destructive/10 p-4 text-center">
@@ -107,10 +91,6 @@ export function MeshViewerScreen({
       </div>
     );
   }
-
-  console.log('MeshViewerScreen: Rendering with modelUrl', modelUrl);
-
-  const [showFormatSelector, setShowFormatSelector] = useState(false);
 
   const handleDownload = (_format: ExportFormat) => {
     // GLB - direct download (only format currently supported)
@@ -125,39 +105,48 @@ export function MeshViewerScreen({
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.3 }}
-      className="relative min-h-screen flex flex-col bg-[#141414]"
-    >
-      {/* Header */}
-      <Header onLogoClick={onUploadAnother} />
+    <div className="relative min-h-screen flex flex-col bg-[#141414]">
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.3 }}
+        className="relative min-h-screen flex flex-col"
+      >
+        {/* Header */}
+        <Header onLogoClick={onUploadAnother} />
 
-      {/* Preload model */}
-      <PreloadModel url={modelUrl} />
+        {/* Preload model */}
+        <PreloadModel url={modelUrl} />
 
-      {/* Canvas Section */}
-      <div className="bg-neutral-900 flex flex-col gap-10 pb-10 pt-6 px-6 relative flex-1">
-        {/* Card with Controls */}
-        <div className="bg-[#1e1e1e] flex flex-col gap-6 py-3 relative rounded-2xl border border-neutral-800 shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
+        {/* Canvas Section */}
+        <div className="bg-neutral-900 flex flex-col gap-10 pb-10 pt-6 px-6 relative flex-1">
+          {/* Card with Controls */}
+          <motion.div
+            variants={cardVariants}
+            initial="initial"
+            animate="animate"
+            className="bg-[#1e1e1e] flex flex-col gap-6 py-3 relative rounded-2xl border border-neutral-800 shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]"
+          >
           <div className="flex items-center justify-between px-6">
             {/* Download Button */}
-            <button
+            <motion.button
               onClick={() => setShowFormatSelector(!showFormatSelector)}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               className="flex items-center justify-center w-9 h-9 rounded-full border border-neutral-700 shadow-[0px_1px_2px_0px_rgba(0,0,0,0.1)] p-2 hover:bg-neutral-800 transition-colors"
             >
               <ArrowDown className="w-[22px] h-[22px] text-neutral-50" />
-            </button>
+            </motion.button>
 
             {/* New Upload Button */}
-            <button
+            <motion.button
               onClick={onUploadAnother}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
               className="bg-neutral-800 border border-neutral-700 rounded-full px-4 py-2 shadow-[0px_1px_2px_0px_rgba(0,0,0,0.1)] hover:bg-neutral-700 transition-colors"
             >
               <p className="text-sm font-medium text-neutral-50">New Upload</p>
-            </button>
+            </motion.button>
           </div>
 
           {/* Format Selector Modal */}
@@ -194,10 +183,15 @@ export function MeshViewerScreen({
               </motion.div>
             )}
           </AnimatePresence>
-        </div>
+        </motion.div>
 
         {/* 3D Canvas */}
-        <div className="flex-1 relative min-h-[400px]">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2, duration: 0.5 }}
+          className="flex-1 relative min-h-[400px]"
+        >
           <div className="absolute inset-0">
             <ErrorBoundary
               FallbackComponent={ErrorFallback}
@@ -228,7 +222,7 @@ export function MeshViewerScreen({
               </Canvas>
             </ErrorBoundary>
           </div>
-        </div>
+        </motion.div>
       </div>
 
       {/* Footer */}
@@ -289,6 +283,7 @@ export function MeshViewerScreen({
           </div>
         </div>
       </footer>
-    </motion.div>
+      </motion.div>
+    </div>
   );
 }

@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import { ChevronLeft } from 'lucide-react';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
+import { pageVariants, screenTransition, cardVariants } from '@/utils/transitions';
 
 interface ErrorScreenProps {
   error: string;
@@ -39,10 +40,12 @@ export function ErrorScreen({ error, onRetry }: ErrorScreenProps) {
 
   return (
     <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.3 }}
+      custom="backward"
+      variants={pageVariants}
+      initial="initial"
+      animate="animate"
+      exit="exit"
+      transition={screenTransition}
       className="min-h-screen flex flex-col"
     >
       <Header onLogoClick={onRetry} />
@@ -50,12 +53,14 @@ export function ErrorScreen({ error, onRetry }: ErrorScreenProps) {
       {/* Secondary Header with Back Button */}
       <div className="bg-neutral-900 relative shrink-0 w-full border-b border-neutral-800 max-h-[60px]">
         <div className="box-border flex items-center justify-between overflow-clip p-[24px] relative w-full h-[60px]">
-          <button
+          <motion.button
             onClick={onRetry}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             className="box-border flex items-center justify-center p-[8px] relative rounded-full shrink-0 size-[36px] border border-neutral-700 shadow-[0px_1px_2px_0px_rgba(0,0,0,0.1)] hover:bg-white transition-colors group"
           >
             <ChevronLeft className="h-[22px] w-[22px] text-white group-hover:text-black transition-colors" strokeWidth={2} />
-          </button>
+          </motion.button>
         </div>
       </div>
 
@@ -63,7 +68,12 @@ export function ErrorScreen({ error, onRetry }: ErrorScreenProps) {
       <div className="bg-neutral-900 box-border flex flex-col gap-[40px] items-start pb-[40px] pt-[24px] px-[24px] relative w-full min-h-[640px]">
         <div className="w-full max-w-md mx-auto flex flex-col gap-[40px]">
           {/* Hero Text */}
-          <div className="flex flex-col gap-[16px] items-start relative shrink-0 w-full">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="flex flex-col gap-[16px] items-start relative shrink-0 w-full"
+          >
             <div className="flex flex-col gap-[8px] items-start relative shrink-0 w-full">
               <h1 className="font-semibold text-[24px] leading-[32px] text-white w-full">
                 Something went wrong.
@@ -72,10 +82,16 @@ export function ErrorScreen({ error, onRetry }: ErrorScreenProps) {
                 We couldn't generate your 3D Model.
               </p>
             </div>
-          </div>
+          </motion.div>
 
           {/* Error Card */}
-          <div className="bg-[#1e1e1e] box-border flex flex-col gap-[24px] items-start px-0 py-[24px] relative rounded-[24px] shrink-0 w-full border border-neutral-800 shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
+          <motion.div
+            variants={cardVariants}
+            initial="initial"
+            animate="animate"
+            transition={{ delay: 0.2 }}
+            className="bg-[#1e1e1e] box-border flex flex-col gap-[24px] items-start px-0 py-[24px] relative rounded-[24px] shrink-0 w-full border border-neutral-800 shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]"
+          >
             {/* Card Header */}
             <div className="box-border flex flex-col gap-[6px] items-start px-[24px] py-0 relative shrink-0 w-full">
               <div className="flex gap-[10px] items-center relative shrink-0 w-full">
@@ -92,8 +108,10 @@ export function ErrorScreen({ error, onRetry }: ErrorScreenProps) {
 
             {/* Try Again Button */}
             <div className="box-border flex flex-col gap-[8px] items-start px-[24px] py-0 relative shrink-0 w-full">
-              <button
+              <motion.button
                 onClick={onRetry}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
                 className="bg-neutral-50 box-border flex flex-col gap-[10px] items-center justify-center px-[16px] py-[12px] relative rounded-[9999px] shadow-[0px_1px_2px_0px_rgba(0,0,0,0.1)] shrink-0 w-full hover:bg-neutral-100 transition-colors"
               >
                 <div className="flex gap-[10px] items-center justify-center relative shrink-0">
@@ -101,9 +119,9 @@ export function ErrorScreen({ error, onRetry }: ErrorScreenProps) {
                     Try Again
                   </p>
                 </div>
-              </button>
+              </motion.button>
             </div>
-          </div>
+          </motion.div>
         </div>
       </div>
 

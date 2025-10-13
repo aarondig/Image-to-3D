@@ -3,6 +3,7 @@ import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { Breadcrumb } from '@/components/layout/Breadcrumb';
 import { PreviewModel } from '@/components/ui/PreviewModel';
+import { pageVariants, screenTransition, staggerContainer, staggerItem } from '@/utils/transitions';
 
 interface HomeScreenProps {
   onGetStarted: () => void;
@@ -11,10 +12,12 @@ interface HomeScreenProps {
 export function HomeScreen({ onGetStarted }: HomeScreenProps) {
   return (
     <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.3 }}
+      custom="forward"
+      variants={pageVariants}
+      initial="initial"
+      animate="animate"
+      exit="exit"
+      transition={screenTransition}
       className="bg-[#141414] flex flex-col items-start relative w-full min-h-screen"
     >
       <Header onLogoClick={onGetStarted} />
@@ -23,9 +26,14 @@ export function HomeScreen({ onGetStarted }: HomeScreenProps) {
 
       {/* Canvas / Main Content */}
       <div className="bg-neutral-900 box-border flex flex-col gap-[40px] items-start pb-[40px] pt-[24px] px-[24px] relative w-full min-h-[640px]">
-        <div className="w-full max-w-md mx-auto flex flex-col gap-[40px]">
+        <motion.div
+          variants={staggerContainer}
+          initial="initial"
+          animate="animate"
+          className="w-full max-w-md mx-auto flex flex-col gap-[40px]"
+        >
           {/* Hero Text */}
-          <div className="flex flex-col gap-[16px] items-start relative shrink-0 w-full">
+          <motion.div variants={staggerItem} className="flex flex-col gap-[16px] items-start relative shrink-0 w-full">
             <div className="flex flex-col gap-[8px] items-start relative shrink-0 w-full">
               <h1 className="font-semibold text-[36px] leading-[40px] text-white w-full">
                 Photo 3D
@@ -34,18 +42,24 @@ export function HomeScreen({ onGetStarted }: HomeScreenProps) {
                 Transform any photo (under 10mb) into an interactive 3D model. Don't sue me.
               </p>
             </div>
-          </div>
+          </motion.div>
 
           {/* Preview Card */}
-          <div className="bg-[#1e1e1e] box-border relative h-[270px] rounded-[24px] shrink-0 w-full border border-neutral-800 shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
+          <motion.div
+            variants={staggerItem}
+            className="bg-[#1e1e1e] box-border relative h-[270px] rounded-[24px] shrink-0 w-full border border-neutral-800 shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]"
+          >
             <div className="absolute inset-0">
               <PreviewModel />
             </div>
-          </div>
+          </motion.div>
 
           {/* CTA Button */}
-          <button
+          <motion.button
+            variants={staggerItem}
             onClick={onGetStarted}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
             className="bg-neutral-50 box-border flex flex-col gap-[10px] items-center justify-center px-0 py-[12px] relative rounded-[9999px] shadow-[0px_1px_2px_0px_rgba(0,0,0,0.1)] shrink-0 w-full hover:bg-neutral-100 transition-colors"
           >
             <div className="flex gap-[10px] items-center justify-center relative shrink-0">
@@ -53,8 +67,8 @@ export function HomeScreen({ onGetStarted }: HomeScreenProps) {
                 Get Started
               </p>
             </div>
-          </button>
-        </div>
+          </motion.button>
+        </motion.div>
       </div>
 
       <Footer />

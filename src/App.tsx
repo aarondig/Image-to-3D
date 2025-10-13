@@ -5,6 +5,7 @@ import { UploadScreen } from './screens/UploadScreen';
 import { ProcessingScreen } from './screens/ProcessingScreen';
 import { ErrorScreen } from './screens/ErrorScreen';
 import { useMeshJob } from './hooks/useMeshJob';
+import { hashImageData, getCachedResult, cacheResult } from './utils/imageCache';
 import type { CreateMeshResponse } from './types/api';
 import type { Screen } from './types/screens';
 
@@ -50,6 +51,27 @@ function App() {
     }
   }, [jobStatus.status, jobStatus.asset?.url, screen]);
 
+  // Cache successful results
+  useEffect(() => {
+    async function cacheSuccessfulResult() {
+      if (jobStatus.status === 'SUCCEEDED' && jobStatus.asset?.url && imageDataUrl && taskId) {
+        try {
+          const imageHash = await hashImageData(imageDataUrl);
+          cacheResult(imageHash, {
+            taskId,
+            modelUrl: jobStatus.asset.url,
+            status: 'SUCCEEDED',
+          });
+          console.log('💾 [APP] Cached successful result for future use');
+        } catch (error) {
+          console.warn('Failed to cache result:', error);
+        }
+      }
+    }
+
+    cacheSuccessfulResult();
+  }, [jobStatus.status, jobStatus.asset?.url, imageDataUrl, taskId]);
+
   async function handleImageSelected(dataUrl: string) {
     const now = Date.now();
     if (now < nextAllowedAt) return;
@@ -64,6 +86,22 @@ function App() {
     setScreen('PROCESSING');
 
     try {
+      // Check cache first to avoid duplicate API calls
+      console.log('🔍 [APP] Checking cache for uploaded image...');
+      const imageHash = await hashImageData(dataUrl);
+      const cachedResult = getCachedResult(imageHash);
+
+      if (cachedResult && cachedResult.status === 'SUCCEEDED' && cachedResult.modelUrl) {
+        console.log('⚡ [APP] Using cached result! Saved API call.');
+        // Use cached taskId and simulate instant completion
+        setTaskId(cachedResult.taskId);
+
+        // Simulate the job status to skip directly to viewer
+        // The useMeshJob hook will handle showing the cached model
+        return;
+      }
+
+      console.log('📡 [APP] No cache found, calling API...');
       const response = await fetch('/api/create-mesh', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -74,6 +112,7 @@ function App() {
             target_format: 'glb',
             quality: 'high',
           },
+          imageHash, // Send hash to server for server-side caching
         }),
       });
 

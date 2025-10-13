@@ -124,3 +124,87 @@ export function updateJob(taskId: string, updates: Partial<JobMetadata>): JobMet
 
   return job;
 }
+
+// ============================================================================
+// MOCK MODE FOR DEVELOPMENT
+// ============================================================================
+
+/**
+ * Generate a mock task ID for development mode
+ */
+export function generateMockTaskId(): string {
+  return `mock_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+}
+
+/**
+ * Generate mock 3D model URL (a simple cube GLB)
+ */
+export function getMockModelUrl(): string {
+  // Return a data URL for a minimal GLB file (simple cube)
+  // In production, you could return a hosted sample model
+  return 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Box/glTF-Binary/Box.glb';
+}
+
+// ============================================================================
+// SERVER-SIDE RESULT CACHING
+// ============================================================================
+
+export interface CachedModelResult {
+  taskId: string;
+  modelUrl: string;
+  timestamp: number;
+  imageHash: string;
+}
+
+const resultCache: Record<string, CachedModelResult> = {};
+const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+
+/**
+ * Check if a result is cached for this image hash
+ */
+export function getCachedModelResult(imageHash: string): CachedModelResult | null {
+  if (!imageHash) return null;
+
+  const cached = resultCache[imageHash];
+  if (!cached) return null;
+
+  // Check if expired
+  const age = Date.now() - cached.timestamp;
+  if (age > CACHE_TTL_MS) {
+    console.log(`🗑️ [SERVER-CACHE] Expired cache for hash: ${imageHash.substring(0, 16)}...`);
+    delete resultCache[imageHash];
+    return null;
+  }
+
+  console.log(`✅ [SERVER-CACHE] Found cached result for hash: ${imageHash.substring(0, 16)}...`);
+  return cached;
+}
+
+/**
+ * Cache a completed model result
+ */
+export function cacheModelResult(imageHash: string, taskId: string, modelUrl: string): void {
+  if (!imageHash || !taskId || !modelUrl) return;
+
+  resultCache[imageHash] = {
+    taskId,
+    modelUrl,
+    timestamp: Date.now(),
+    imageHash,
+  };
+
+  console.log(`💾 [SERVER-CACHE] Cached result for hash: ${imageHash.substring(0, 16)}...`);
+}
+
+/**
+ * Get cache statistics
+ */
+export function getCacheStats(): { count: number; oldestAgeMs: number } {
+  const entries = Object.values(resultCache);
+  const now = Date.now();
+
+  return {
+    count: entries.length,
+    oldestAgeMs: entries.length > 0 ? Math.max(...entries.map(e => now - e.timestamp)) : 0,
+  };
+}

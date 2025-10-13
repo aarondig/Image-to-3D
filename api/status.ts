@@ -3,6 +3,9 @@ import type { JobStatus } from '../src/types/api.js';
 import {
   getJob,
   updateJob,
+  getMockModelUrl,
+  cacheModelResult,
+  getCachedModelResult,
 } from './_shared.js';
 
 /**
@@ -131,6 +134,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     console.log(`🔍 [STATUS] Checking status for taskId: ${taskId}`);
+
+    // 🎭 MOCK MODE: Return fake success immediately
+    if (taskId.startsWith('mock_')) {
+      console.log('🎭 [MOCK MODE] Returning instant success for mock taskId');
+      return res.status(200).json({
+        taskId,
+        status: 'SUCCEEDED',
+        progress: 1,
+        message: 'Mock generation complete',
+        asset: {
+          url: getMockModelUrl(),
+          format: 'glb',
+          sizeBytes: 0,
+        },
+        error: null,
+      });
+    }
 
     // Get Tripo API credentials
     const tripoApiBase = process.env.TRIPO_API_BASE;

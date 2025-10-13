@@ -7,6 +7,9 @@ import {
   hasExceededLimit,
   incrementUsage,
   createJob,
+  generateMockTaskId,
+  getMockModelUrl,
+  getCachedModelResult,
 } from './_shared.js';
 
 /**
@@ -55,7 +58,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     // Parse request body
-    const { image, options } = req.body;
+    const { image, options, imageHash } = req.body;
 
     // Validate image field
     if (!image || typeof image !== 'string') {
@@ -66,6 +69,41 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const maxBytes = parseInt(process.env.MAX_IMAGE_BYTES || '3000000');
     if (!validateImageSize(image, maxBytes)) {
       return res.status(400).json({ error: 'Image too large' });
+    }
+
+    // 📦 SERVER-SIDE CACHE: Check if we've already generated this image
+    if (imageHash && typeof imageHash === 'string') {
+      const cachedResult = getCachedModelResult(imageHash);
+      if (cachedResult) {
+        console.log('⚡ [SERVER-CACHE] Returning cached taskId! Saved API call.');
+        // Return the cached taskId - client can poll for instant result
+        return res.status(202).json({
+          taskId: cachedResult.taskId,
+          status: 'SUCCEEDED', // Already complete
+          etaSeconds: 0,
+          _cached: true, // Flag to indicate this is from cache
+        });
+      }
+    }
+
+    // 🎭 MOCK MODE: Skip API calls during development
+    if (process.env.MOCK_API_RESPONSES === 'true') {
+      console.log('🎭 [MOCK MODE] Returning fake taskId without calling API');
+      const mockTaskId = generateMockTaskId();
+
+      // Store mock job with fake model URL
+      const mockJob = createJob(mockTaskId);
+      mockJob.stage = 'COMPLETE'; // Mark as complete immediately
+
+      // Increment usage (even in mock mode to test limits)
+      incrementUsage(sessionId);
+
+      return res.status(202).json({
+        taskId: mockTaskId,
+        status: 'QUEUED',
+        etaSeconds: 5, // Instant completion
+        _mock: true, // Flag to indicate this is a mock response
+      });
     }
 
     // Build Tripo API request

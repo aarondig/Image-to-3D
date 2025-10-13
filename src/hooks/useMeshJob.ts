@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import type { JobStatus, StatusResponse } from '../types/api';
 import { config } from '../config';
+import { getCachedResult } from '../utils/imageCache';
 
 interface MeshJobState {
   status: JobStatus | 'IDLE';
