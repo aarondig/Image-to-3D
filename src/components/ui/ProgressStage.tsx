@@ -1,14 +1,14 @@
-import { motion } from 'framer-motion';
-import { Check } from 'lucide-react';
+import { useSpring, animated } from '@react-spring/web';
+import { CornerDownRight } from 'lucide-react';
 
 interface ProgressStageProps {
   label: string;
   sublabel?: string;
-  status: 'pending' | 'active' | 'complete';
+  status: 'inactive' | 'active';
   showConnector?: boolean;
   engineBadge?: string;
-  countdown?: string;
-  queuePosition?: string;
+  rightLabel?: string;
+  rightSublabel?: string;
 }
 
 export function ProgressStage({
@@ -17,95 +17,100 @@ export function ProgressStage({
   status,
   showConnector = true,
   engineBadge,
-  countdown,
-  queuePosition,
+  rightLabel,
+  rightSublabel,
 }: ProgressStageProps) {
+  const isActive = status === 'active';
+
+  // Smooth spring animations for all state changes
+  const contentSpring = useSpring({
+    opacity: isActive ? 1 : 0.4,
+    config: { tension: 280, friction: 60 },
+  });
+
+  const dotSpring = useSpring({
+    backgroundColor: isActive ? '#ffffff' : '#404040',
+    config: { tension: 280, friction: 60 },
+  });
+
+  const sublabelSpring = useSpring({
+    opacity: isActive ? 1 : 0,
+    height: isActive ? 'auto' : 0,
+    marginTop: isActive ? 6 : 0,
+    config: { tension: 280, friction: 60 },
+  });
+
   return (
-    <div className="relative flex gap-3 w-full">
-      {/* Left side: Indicator + Connector */}
-      <div className="flex flex-col items-center">
-        {/* Indicator Circle */}
-        <div className="relative flex items-center justify-center shrink-0">
-          {status === 'complete' ? (
-            <motion.div
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ duration: 0.2 }}
-              className="size-[20px] rounded-full bg-white flex items-center justify-center"
-            >
-              <Check className="size-[12px] text-neutral-900" strokeWidth={3} />
-            </motion.div>
-          ) : status === 'active' ? (
-            <motion.div
-              initial={{ scale: 0.8 }}
-              animate={{ scale: 1 }}
-              transition={{ duration: 0.2 }}
-              className="size-[20px] rounded-full border-2 border-white bg-white/20"
-            />
-          ) : (
-            <div className="size-[20px] rounded-full border-2 border-neutral-700 bg-transparent" />
-          )}
-        </div>
+    <animated.div
+      style={contentSpring}
+      className="relative flex gap-[24px] w-full"
+    >
+      {/* Left side: Dot + Connector Line */}
+      <div className="flex flex-col items-center pt-[6px]">
+        {/* Dot Indicator */}
+        <animated.div
+          style={dotSpring}
+          className="size-[8px] rounded-full shrink-0"
+        />
 
         {/* Vertical Connector Line */}
         {showConnector && (
           <div
-            className={`w-[2px] flex-1 min-h-[24px] ${
-              status === 'complete' ? 'bg-neutral-600' : 'bg-neutral-800'
+            className={`w-[1px] flex-1 mt-[8px] transition-colors duration-300 ${
+              isActive ? 'bg-neutral-700' : 'bg-neutral-800'
             }`}
           />
         )}
       </div>
 
-      {/* Right side: Text Content */}
-      <div className="flex-1 pb-6">
+      {/* Right side: Content */}
+      <div className="flex-1 pb-[16px]">
+        {/* Main Row */}
         <div className="flex items-start justify-between gap-2">
           {/* Label */}
-          <div className="flex flex-col gap-0.5">
+          <p
+            className={`font-medium text-[14px] leading-[20px] transition-colors duration-300 ${
+              isActive ? 'text-white' : 'text-neutral-500'
+            }`}
+          >
+            {label}
+          </p>
+
+          {/* Right Label - Inline with title */}
+          {(rightLabel || rightSublabel) && (
             <p
-              className={`font-medium text-[14px] leading-[20px] ${
-                status === 'active' ? 'text-white' : status === 'complete' ? 'text-neutral-400' : 'text-neutral-500'
+              className={`font-medium text-[14px] leading-[20px] tabular-nums transition-colors duration-300 ${
+                isActive ? 'text-white' : 'text-neutral-600'
               }`}
             >
-              {label}
+              {isActive ? rightLabel : rightSublabel}
             </p>
+          )}
+        </div>
+
+        {/* Sublabel Row - Smoothly animate in/out */}
+        <animated.div
+          style={sublabelSpring}
+          className="flex items-start justify-between gap-2 overflow-hidden"
+        >
+          {/* Left Sublabel */}
+          <div className="flex items-start gap-1">
             {sublabel && (
               <p className="font-normal text-[12px] leading-[16px] text-neutral-500">
                 {sublabel}
-                {engineBadge && (
-                  <span className="ml-1.5 text-neutral-400">
-                    ↳ {engineBadge}
-                  </span>
-                )}
               </p>
+            )}
+            {engineBadge && (
+              <div className="flex items-center gap-1">
+                <CornerDownRight className="size-[14px] text-neutral-600" strokeWidth={2} />
+                <p className="font-normal text-[12px] leading-[16px] text-neutral-500">
+                  {engineBadge}
+                </p>
+              </div>
             )}
           </div>
-
-          {/* Right side info */}
-          <div className="flex flex-col items-end gap-0.5">
-            {countdown && status === 'active' && (
-              <p className="font-medium text-[14px] leading-[20px] text-white tabular-nums">
-                {countdown}
-              </p>
-            )}
-            {queuePosition && status === 'active' && (
-              <p className="font-normal text-[12px] leading-[16px] text-neutral-500">
-                {queuePosition}
-              </p>
-            )}
-            {status === 'complete' && (
-              <p className="font-normal text-[12px] leading-[16px] text-neutral-500">
-                Complete
-              </p>
-            )}
-            {status === 'pending' && (
-              <p className="font-normal text-[12px] leading-[16px] text-neutral-600">
-                Pending
-              </p>
-            )}
-          </div>
-        </div>
+        </animated.div>
       </div>
-    </div>
+    </animated.div>
   );
 }

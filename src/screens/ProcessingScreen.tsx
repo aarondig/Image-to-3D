@@ -1,27 +1,158 @@
-import { motion } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { useSpring, animated } from '@react-spring/web';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { Breadcrumb } from '@/components/layout/Breadcrumb';
+import { ProgressStage } from '@/components/ui/ProgressStage';
+import type { Phase } from '@/types/api';
+
+interface PhaseData {
+  phase: Phase;
+  label: string;
+  description: string;
+  timestamp: number;
+  queuePosition?: string;
+  engineName?: string;
+}
 
 interface ProcessingScreenProps {
   image: string;
   progress: number;
-  status: string;
-  phase?: string;
+  currentPhase: Phase;
+  phaseHistory: PhaseData[];
+  phaseStartTime: number;
+  queuePosition?: string;
+  engineName?: string;
   isComplete?: boolean;
   onBack?: () => void;
 }
 
+// Phase configuration with labels and descriptions
+const PHASE_CONFIG: Record<Phase, { label: string; description: string }> = {
+  uploading: {
+    label: 'Uploading',
+    description: 'Optimizing and encoding image data for processing',
+  },
+  queued: {
+    label: 'Queued',
+    description: 'Awaiting processing slot in generation queue',
+  },
+  preprocessing: {
+    label: 'Preprocessing',
+    description: 'Normalizing color and lighting data',
+  },
+  depth: {
+    label: 'Depth Estimation',
+    description: 'Generating surface map from single photo',
+  },
+  reconstruction: {
+    label: 'Mesh Reconstruction',
+    description: 'Converting depth map into 3D geometry',
+  },
+  texturing: {
+    label: 'Texturing',
+    description: 'Projecting image colors onto 3D surface',
+  },
+  compiling: {
+    label: 'Compiling',
+    description: 'Compressing and optimizing mesh for export',
+  },
+  finalizing: {
+    label: 'Finalizing',
+    description: 'Validating file integrity and upload success',
+  },
+  ready: {
+    label: 'Ready',
+    description: '3D preview available · tap to view',
+  },
+  error: {
+    label: 'Error',
+    description: 'An error occurred during processing',
+  },
+};
+
 export function ProcessingScreen({
   image,
   progress,
-  status,
-  phase,
+  currentPhase,
+  phaseHistory,
+  phaseStartTime,
+  queuePosition,
+  engineName,
   isComplete,
   onBack,
 }: ProcessingScreenProps) {
   const progressPercent = Math.round(progress * 100);
+  const currentConfig = PHASE_CONFIG[currentPhase];
+
+  // Countdown timer for active phase
+  const [countdown, setCountdown] = useState<string>('');
+
+  useEffect(() => {
+    const updateCountdown = () => {
+      const elapsed = Date.now() - phaseStartTime;
+      const remainingMs = Math.max(0, 8000 - elapsed); // 8 second countdown
+      const seconds = Math.ceil(remainingMs / 1000);
+      setCountdown(`${seconds}s`);
+    };
+
+    updateCountdown();
+    const interval = setInterval(updateCountdown, 100);
+
+    return () => clearInterval(interval);
+  }, [phaseStartTime]);
+
+  // Build ordered list of phases to render
+  // Current phase at top, followed by history in reverse order
+  const orderedPhases = useMemo(() => {
+    const phases: Array<{
+      key: string;
+      phase: Phase;
+      label: string;
+      description: string;
+      isActive: boolean;
+      showConnector: boolean;
+      engineBadge?: string;
+      rightLabel?: string;
+      rightSublabel?: string;
+    }> = [];
+
+    // Current active phase at top
+    phases.push({
+      key: `current-${currentPhase}`,
+      phase: currentPhase,
+      label: currentConfig.label,
+      description: currentConfig.description,
+      isActive: true,
+      showConnector: phaseHistory.length > 0,
+      engineBadge: engineName,
+      rightLabel: queuePosition || countdown,
+    });
+
+    // Add history in reverse order (most recent first)
+    [...phaseHistory].reverse().forEach((historyPhase, index) => {
+      phases.push({
+        key: `history-${historyPhase.phase}-${historyPhase.timestamp}`,
+        phase: historyPhase.phase,
+        label: historyPhase.label,
+        description: historyPhase.description,
+        isActive: false,
+        showConnector: index < phaseHistory.length - 1,
+        engineBadge: historyPhase.engineName,
+        rightSublabel: 'Complete',
+      });
+    });
+
+    return phases;
+  }, [currentPhase, currentConfig, phaseHistory, engineName, queuePosition, countdown]);
+
+  const imageSpring = useSpring({
+    opacity: 1,
+    scale: 1,
+    from: { opacity: 0, scale: 0.8 },
+    config: { tension: 280, friction: 60 },
+  });
 
   return (
     <div className="bg-[#141414] min-h-screen flex flex-col">
@@ -44,32 +175,27 @@ export function ProcessingScreen({
                   This usually takes 30-90 seconds.
                 </p>
               </div>
-              <motion.div
-                initial={{ scale: 0.8, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ duration: 0.2 }}
+              <animated.div
+                style={imageSpring}
                 className="relative shrink-0 size-[32px]"
               >
                 <Loader2 className="h-[32px] w-[32px] text-white animate-spin" strokeWidth={2} />
-              </motion.div>
+              </animated.div>
             </div>
 
             {/* Progress Section with Image and Percentage */}
             <div className="flex gap-[16px] items-center relative shrink-0 w-full">
               {/* Thumbnail */}
-              <motion.div
-                initial={{ scale: 0.8, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ duration: 0.4 }}
-                className="bg-[#2c2c2c] relative rounded-[16px] shrink-0 size-[75px] border border-neutral-700 shadow-[0px_1px_2px_0px_rgba(0,0,0,0.1)] overflow-hidden"
+              <animated.div
+                style={imageSpring}
+                className="bg-[#2c2c2c] relative rounded-[16px] shrink-0 size-[50px] border border-neutral-700 shadow-[0px_1px_2px_0px_rgba(0,0,0,0.1)] overflow-hidden"
               >
-                <motion.img
-                  layoutId="uploadImage"
+                <img
                   src={image}
                   alt="Processing"
                   className="w-full h-full object-cover"
                 />
-              </motion.div>
+              </animated.div>
 
               {/* Progress Details */}
               <div className="flex flex-col gap-[12px] items-center flex-1 relative shrink-0">
@@ -80,22 +206,39 @@ export function ProcessingScreen({
                     </p>
                   </div>
                   <div className="flex gap-[10px] h-[20px] items-center relative shrink-0">
-                    <p className="font-medium text-[18px] leading-[28px] text-white tabular-nums">
+                    <p className="font-medium text-[14px] leading-[20px] text-white tabular-nums">
                       {progressPercent}%
                     </p>
                   </div>
                 </div>
                 {/* Progress Bar */}
                 <div className="h-[8px] overflow-clip relative rounded-[9999px] shrink-0 w-full bg-neutral-800/50">
-                  <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: `${progressPercent}%` }}
-                    transition={{ duration: 0.5, ease: 'easeOut' }}
+                  <animated.div
+                    style={useSpring({
+                      width: `${progressPercent}%`,
+                      config: { tension: 280, friction: 60 },
+                    })}
                     className="absolute bg-white h-[8px] left-0 rounded-full top-0"
                   />
                 </div>
               </div>
             </div>
+          </div>
+
+          {/* Progressive Phase Tracking - All phases rendered at once */}
+          <div className="flex flex-col items-start px-[24px] relative shrink-0 w-full">
+            {orderedPhases.map((phase) => (
+              <ProgressStage
+                key={phase.key}
+                label={phase.label}
+                sublabel={phase.description}
+                status={phase.isActive ? 'active' : 'inactive'}
+                showConnector={phase.showConnector}
+                engineBadge={phase.engineBadge}
+                rightLabel={phase.rightLabel}
+                rightSublabel={phase.rightSublabel}
+              />
+            ))}
           </div>
         </div>
       </div>

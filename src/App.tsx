@@ -19,8 +19,9 @@ function App() {
   const [nextAllowedAt, setNextAllowedAt] = useState<number>(0);
   const [cooldownSeconds, setCooldownSeconds] = useState<number>(0);
 
-  // Poll job status when taskId is available (but not for cached results)
-  const jobStatus = useMeshJob(cachedModelUrl ? null : taskId);
+  // Poll job status when taskId is available
+  // For cached results, useMeshJob will simulate loading but won't make API calls
+  const jobStatus = useMeshJob(taskId, cachedModelUrl);
 
   // Cooldown timer effect
   useEffect(() => {
@@ -34,14 +35,17 @@ function App() {
   // Auto-transition screens based on job status
   useEffect(() => {
     const status = jobStatus.status;
-    const assetUrl = jobStatus.asset?.url;
+    const assetUrl = jobStatus.asset?.url || cachedModelUrl;
 
     if (status === 'RUNNING' || status === 'QUEUED') {
       if (screen !== 'PROCESSING') {
         setScreen('PROCESSING');
       }
-    } else if (status === 'SUCCEEDED' && assetUrl) {
-      if (screen !== 'MESH_VIEWER') {
+    } else if ((status === 'SUCCEEDED' && assetUrl) || (jobStatus.currentPhase === 'ready' && cachedModelUrl)) {
+      // Only transition if we're still on PROCESSING screen
+      // This prevents re-triggering when already on MESH_VIEWER
+      // Also transition when we reach 'ready' phase with cached model
+      if (screen === 'PROCESSING') {
         setScreen('MESH_VIEWER');
       }
     } else if (status === 'FAILED' || status === 'TIMEOUT') {
@@ -49,7 +53,7 @@ function App() {
         setScreen('ERROR');
       }
     }
-  }, [jobStatus.status, jobStatus.asset?.url, screen]);
+  }, [jobStatus.status, jobStatus.asset?.url, jobStatus.currentPhase, cachedModelUrl, screen]);
 
   // Cache successful results
   useEffect(() => {
@@ -93,11 +97,13 @@ function App() {
 
       if (cachedResult && cachedResult.status === 'SUCCEEDED' && cachedResult.modelUrl) {
         console.log('⚡ [APP] Using cached result! Saved API call.');
-        // Use cached model URL directly, skip polling
+        // Still set taskId to trigger the 8-second loading animation
+        // The useMeshJob hook will simulate progress and then show the cached result
         setTaskId(cachedResult.taskId);
         setCachedModelUrl(cachedResult.modelUrl);
-        // Go directly to viewer
-        setScreen('MESH_VIEWER');
+
+        // The loading animation will run in ProcessingScreen via useMeshJob
+        // After 8 seconds, the useEffect below will transition to MESH_VIEWER
         return;
       }
 
@@ -181,14 +187,18 @@ function App() {
         <ProcessingScreen
           image={imageDataUrl}
           progress={jobStatus.progress}
-          status={jobStatus.message || 'Processing...'}
+          currentPhase={jobStatus.currentPhase}
+          phaseHistory={jobStatus.phaseHistory}
+          phaseStartTime={jobStatus.phaseStartTime}
+          queuePosition={jobStatus.queuePosition}
+          engineName={jobStatus.engineName}
           isComplete={jobStatus.status === 'SUCCEEDED'}
           onBack={handleBackFromProcessing}
         />
       )}
 
       {screen === 'MESH_VIEWER' && (cachedModelUrl || jobStatus.asset?.url) ? (
-        <Suspense fallback={<ProcessingScreen image={imageDataUrl || ''} progress={1} status="Loading 3D viewer..." />}>
+        <Suspense fallback={<ProcessingScreen image={imageDataUrl || ''} progress={1} currentPhase="ready" phaseHistory={[]} phaseStartTime={Date.now()} />}>
           <MeshViewerScreen
             modelUrl={cachedModelUrl || jobStatus.asset!.url}
             onUploadAnother={handleReset}

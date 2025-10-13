@@ -19,7 +19,7 @@ function Model() {
   });
 
   // Rotate the model
-  const rotationSpeed = .0001;
+  const rotationSpeed = .0025;
   const animate = () => {
     if (meshRef.current) {
       meshRef.current.rotation.y += rotationSpeed;

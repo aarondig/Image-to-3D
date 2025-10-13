@@ -162,13 +162,11 @@ export type Phase =
 | **Texturing** | Projecting image colors onto 3D surface |
 | **Compiling** | Compressing and optimizing mesh for export |
 | **Finalizing** | Validating file integrity and upload success |
-| **Ready** | 3D preview available · tap to view |
+| **Ready** | 3D preview available |
 
 ### Visual Design Notes
 - **9-segment progress bar:** Each stage corresponds to one segment. Filled segments = completed stages; active stage pulses subtly.
-- **Top header:** Current stage title.
-- **Footer:** Cancel / Retry buttons.
-- **Status message:** Shows current progress percentage and stage description.
+- **Status message:** Shows current progress percentage and stage description until the status is completed, then lose the description.
 
 ---
 
@@ -176,73 +174,90 @@ export type Phase =
 
 In `src/config.ts`:
 ```ts
-export const pollIntervalMs = 5000;
+export const config = {
+  apiBaseUrl: import.meta.env.VITE_API_BASE_URL || '',
+  maxImageBytes: 10 * 1024 * 1024,
+  maxImageDimension: 1024,
+  pollIntervalMs: 5000,
 
-export const phaseDurationsMs = {
-  preprocessing: 3000,
-  depth: 5000,
-  reconstruction: 6000,
-  texturing: 5000,
-  compiling: 3000,
-  finalizing: 2000,
+  // Simulated loading configuration
+  // Always show 8-second loading animation regardless of cache/API speed
+  totalLoadingDurationMs: 8000,
+
+  // Phase timings (in milliseconds from start)
+  // These define when each phase should appear during the 8-second window
+  phaseTimings: {
+    uploading: 0,        // 0s - 0.5s (6.25%)
+    queued: 500,         // 0.5s - 1.5s (12.5%)
+    preprocessing: 1500, // 1.5s - 2.5s (18.75%)
+    depth: 2500,         // 2.5s - 4s (31.25%)
+    reconstruction: 4000,// 4s - 5.5s (56.25%)
+    texturing: 5500,     // 5.5s - 6.5s (75%)
+    compiling: 6500,     // 6.5s - 7.5s (87.5%)
+    finalizing: 7500,    // 7.5s - 8s (96.875%)
+  },
 };
 ```
+
+### Key Configuration Notes:
+- **Total Duration**: Fixed at 8 seconds for all uploads
+- **Consistent Experience**: Both cached and new uploads show the same loading animation
+- **Phase Distribution**: Phases are distributed evenly across the 8-second window
+- **API Independence**: The loading animation runs independently of actual API response time
 
 ---
 
 ## 8. Technical Flow Summary
 
+### Standard Flow (New Upload)
 ```
 [User Uploads Photo]
         ↓
 Local Resize (imageResize.ts)
         ↓
+Check client-side cache (imageCache.ts)
+        ↓
 POST /api/create-mesh → Tripo3D job created
         ↓
-Frontend enters `Queued` state
+Frontend starts 8-second simulated loading
         ↓
-Polling /api/status every 5s
+Polling /api/status every 5s in background
         ↓
-Frontend cycles through phase states
+Frontend cycles through phase states (0.5s - 1.5s per phase)
+        ↓
+Progress bar fills linearly over 8 seconds
         ↓
 GET /api/status → {status: 'SUCCEEDED', asset: {...}}
+        ↓
+After 8 seconds complete, transition to viewer
         ↓
 Viewer opens → Download/Share options
 ```
 
----
+### Cached Flow (Previously Generated)
+```
+[User Uploads Same Photo]
+        ↓
+Local Resize (imageResize.ts)
+        ↓
+Check client-side cache → HIT!
+        ↓
+Frontend starts 8-second simulated loading (no API call)
+        ↓
+Frontend cycles through phase states (same timing as new upload)
+        ↓
+Progress bar fills linearly over 8 seconds
+        ↓
+After 8 seconds complete, transition to viewer with cached model
+        ↓
+Viewer opens → Download/Share options
+```
 
-## 9. Dependencies & Integrations
+### Key Implementation Details:
+- **Simulated Progress**: The `useMeshJob` hook runs a 50ms interval timer that updates progress linearly from 0% to 100% over 8 seconds
+- **Phase Transitions**: Phases change at predefined timestamps (0.5s, 1.5s, 2.5s, etc.) regardless of actual API state
+- **API Polling**: Runs in parallel with the simulation, but results are only shown after the 8-second animation completes
+- **Cached Results**: Skip API polling entirely but still show the full 8-second loading animation for consistency
+- **Error Handling**: Errors (FAILED, TIMEOUT) bypass the simulation and display immediately
+- **No Countdown**: The UI shows natural loading progression without displaying a countdown timer - users just see the phases progressing naturally
 
-| Dependency | Purpose |
-|-------------|----------|
-| **@react-three/fiber / drei** | 3D model rendering after generation |
-| **Framer Motion** | Progress bar animation + fade transitions |
-| **Custom polling (useMeshJob)** | Fetch job status updates from `/api/status` |
-| **Tripo3D API** | Core generation engine |
-| **Vercel KV (Future)** | For storing job metadata + asset history |
-| **Web Share API (Future)** | For sharing generated USDZ assets |
-
----
-
-## 10. Success Metrics
-
-| Metric | Target |
-|---------|--------|
-| Time-to-feedback | < 3 seconds |
-| Visible progress transparency | 100% jobs show clear stage progression |
-| Job completion success | ≥ 95% |
-| User retry rate (error state) | < 3% |
-| Average generation time | 30-90 seconds |
-
----
-
-## 11. Implementation Checklist
-
-✅ Extend `useMeshJob.ts` with phase machine
-✅ Update `ProcessingScreen.tsx` UI with 9-segment progress bar and stage labels
-✅ Simplify `/api/create-mesh.ts` to use Tripo3D only
-✅ Simplify `/api/status.ts` to remove fallback logic
-✅ Add constants to `config.ts`
-✅ Write error copy + retry flows
-✅ Validate progress logic with Tripo3D API

@@ -1,4 +1,4 @@
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useState } from 'react';
 import '@react-three/fiber';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Environment, useGLTF, Center } from '@react-three/drei';
@@ -30,20 +30,11 @@ function Model({ url }: { url: string }) {
 
   return (
     <Center>
-      <primitive object={gltf.scene.clone()} />
+      <primitive object={gltf.scene} />
     </Center>
   );
 }
 
-// Preload the model to avoid issues
-function PreloadModel({ url }: { url: string }) {
-  useEffect(() => {
-    const proxyUrl = `/api/proxy-model?url=${encodeURIComponent(url)}`;
-    useGLTF.preload(proxyUrl);
-  }, [url]);
-
-  return null;
-}
 
 function Loader() {
   return (
@@ -109,12 +100,10 @@ export function MeshViewerScreen({
       {/* Header */}
       <Header onLogoClick={onUploadAnother} />
 
-        {/* Preload model */}
-        <PreloadModel url={modelUrl} />
-
         {/* Canvas Section */}
         <div className="bg-neutral-900 flex flex-col gap-10 pb-10 pt-6 px-6 relative flex-1">
           {/* Card with Controls */}
+             <AnimatePresence>
           <motion.div
             variants={cardVariants}
             initial="initial"
@@ -144,7 +133,7 @@ export function MeshViewerScreen({
           </div>
 
           {/* Format Selector Modal */}
-          <AnimatePresence>
+       
             {showFormatSelector && (
               <motion.div
                 initial={{ opacity: 0, height: 0 }}
@@ -176,13 +165,13 @@ export function MeshViewerScreen({
                 </div>
               </motion.div>
             )}
-          </AnimatePresence>
+          
         </motion.div>
 
         {/* 3D Canvas */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
           transition={{ delay: 0.2, duration: 0.5 }}
           className="flex-1 relative min-h-[400px]"
         >
@@ -217,6 +206,7 @@ export function MeshViewerScreen({
             </ErrorBoundary>
           </div>
         </motion.div>
+        </AnimatePresence>
       </div>
 
       {/* Footer */}
