@@ -106,14 +106,8 @@ export function MeshViewerScreen({
 
   return (
     <div className="relative min-h-screen flex flex-col bg-[#141414]">
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.3 }}
-        className="relative min-h-screen flex flex-col"
-      >
-        {/* Header */}
-        <Header onLogoClick={onUploadAnother} />
+      {/* Header */}
+      <Header onLogoClick={onUploadAnother} />
 
         {/* Preload model */}
         <PreloadModel url={modelUrl} />
@@ -283,7 +277,6 @@ export function MeshViewerScreen({
           </div>
         </div>
       </footer>
-      </motion.div>
     </div>
   );
 }

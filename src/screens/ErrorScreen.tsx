@@ -2,7 +2,6 @@ import { motion } from 'framer-motion';
 import { ChevronLeft } from 'lucide-react';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
-import { pageVariants, screenTransition, cardVariants } from '@/utils/transitions';
 
 interface ErrorScreenProps {
   error: string;
@@ -39,15 +38,7 @@ export function ErrorScreen({ error, onRetry }: ErrorScreenProps) {
   const errorTitle = getErrorTitle(error);
 
   return (
-    <motion.div
-      custom="backward"
-      variants={pageVariants}
-      initial="initial"
-      animate="animate"
-      exit="exit"
-      transition={screenTransition}
-      className="min-h-screen flex flex-col"
-    >
+    <div className="min-h-screen flex flex-col">
       <Header onLogoClick={onRetry} />
 
       {/* Secondary Header with Back Button */}
@@ -85,13 +76,7 @@ export function ErrorScreen({ error, onRetry }: ErrorScreenProps) {
           </motion.div>
 
           {/* Error Card */}
-          <motion.div
-            variants={cardVariants}
-            initial="initial"
-            animate="animate"
-            transition={{ delay: 0.2 }}
-            className="bg-[#1e1e1e] box-border flex flex-col gap-[24px] items-start px-0 py-[24px] relative rounded-[24px] shrink-0 w-full border border-neutral-800 shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]"
-          >
+          <div className="bg-[#1e1e1e] box-border flex flex-col gap-[24px] items-start px-0 py-[24px] relative rounded-[24px] shrink-0 w-full border border-neutral-800 shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
             {/* Card Header */}
             <div className="box-border flex flex-col gap-[6px] items-start px-[24px] py-0 relative shrink-0 w-full">
               <div className="flex gap-[10px] items-center relative shrink-0 w-full">
@@ -121,11 +106,11 @@ export function ErrorScreen({ error, onRetry }: ErrorScreenProps) {
                 </div>
               </motion.button>
             </div>
-          </motion.div>
+          </div>
         </div>
       </div>
 
       <Footer />
-    </motion.div>
+    </div>
   );
 }

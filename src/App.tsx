@@ -1,5 +1,4 @@
 import { useState, useEffect, lazy, Suspense } from 'react';
-import { AnimatePresence } from 'framer-motion';
 import { HomeScreen } from './screens/HomeScreen';
 import { UploadScreen } from './screens/UploadScreen';
 import { ProcessingScreen } from './screens/ProcessingScreen';
@@ -16,11 +15,12 @@ function App() {
   const [screen, setScreen] = useState<Screen>('HOME');
   const [imageDataUrl, setImageDataUrl] = useState<string | null>(null);
   const [taskId, setTaskId] = useState<string | null>(null);
+  const [cachedModelUrl, setCachedModelUrl] = useState<string | null>(null);
   const [nextAllowedAt, setNextAllowedAt] = useState<number>(0);
   const [cooldownSeconds, setCooldownSeconds] = useState<number>(0);
 
-  // Poll job status when taskId is available
-  const jobStatus = useMeshJob(taskId);
+  // Poll job status when taskId is available (but not for cached results)
+  const jobStatus = useMeshJob(cachedModelUrl ? null : taskId);
 
   // Cooldown timer effect
   useEffect(() => {
@@ -93,11 +93,11 @@ function App() {
 
       if (cachedResult && cachedResult.status === 'SUCCEEDED' && cachedResult.modelUrl) {
         console.log('⚡ [APP] Using cached result! Saved API call.');
-        // Use cached taskId and simulate instant completion
+        // Use cached model URL directly, skip polling
         setTaskId(cachedResult.taskId);
-
-        // Simulate the job status to skip directly to viewer
-        // The useMeshJob hook will handle showing the cached model
+        setCachedModelUrl(cachedResult.modelUrl);
+        // Go directly to viewer
+        setScreen('MESH_VIEWER');
         return;
       }
 
@@ -137,6 +137,7 @@ function App() {
     setScreen('UPLOAD');
     setImageDataUrl(null);
     setTaskId(null);
+    setCachedModelUrl(null);
   };
 
   const handleGetStarted = () => setScreen('UPLOAD');
@@ -145,29 +146,31 @@ function App() {
     setScreen('HOME');
     setImageDataUrl(null);
     setTaskId(null);
+    setCachedModelUrl(null);
   };
 
   const handleBackFromProcessing = () => {
     setScreen('UPLOAD');
     setImageDataUrl(null);
     setTaskId(null);
+    setCachedModelUrl(null);
   };
 
   const handleErrorRetry = () => {
     setScreen('UPLOAD');
     setImageDataUrl(null);
     setTaskId(null);
+    setCachedModelUrl(null);
   };
 
   return (
-    <AnimatePresence mode="wait">
+    <>
       {screen === 'HOME' && (
-        <HomeScreen key="home" onGetStarted={handleGetStarted} />
+        <HomeScreen onGetStarted={handleGetStarted} />
       )}
 
       {screen === 'UPLOAD' && (
         <UploadScreen
-          key="upload"
           onImageSelected={handleImageSelected}
           onBack={handleBackFromUpload}
           cooldownSeconds={cooldownSeconds}
@@ -176,7 +179,6 @@ function App() {
 
       {screen === 'PROCESSING' && imageDataUrl && (
         <ProcessingScreen
-          key="processing"
           image={imageDataUrl}
           progress={jobStatus.progress}
           status={jobStatus.message || 'Processing...'}
@@ -185,18 +187,16 @@ function App() {
         />
       )}
 
-      {screen === 'MESH_VIEWER' && jobStatus.asset?.url ? (
-        <Suspense fallback={<ProcessingScreen key="loading" image={imageDataUrl || ''} progress={1} status="Loading 3D viewer..." />}>
+      {screen === 'MESH_VIEWER' && (cachedModelUrl || jobStatus.asset?.url) ? (
+        <Suspense fallback={<ProcessingScreen image={imageDataUrl || ''} progress={1} status="Loading 3D viewer..." />}>
           <MeshViewerScreen
-            key="mesh-viewer"
-            modelUrl={jobStatus.asset.url}
+            modelUrl={cachedModelUrl || jobStatus.asset!.url}
             onUploadAnother={handleReset}
           />
         </Suspense>
       ) : screen === 'MESH_VIEWER' ? (
         /* If we're on MESH_VIEWER screen but no URL, show error */
         <ErrorScreen
-          key="error-no-url"
           error="No model URL available"
           onRetry={handleErrorRetry}
         />
@@ -204,12 +204,11 @@ function App() {
 
       {screen === 'ERROR' && (
         <ErrorScreen
-          key="error"
           error={jobStatus.error || 'Failed to generate 3D model'}
           onRetry={handleErrorRetry}
         />
       )}
-    </AnimatePresence>
+    </>
   );
 }
 

@@ -1,12 +1,11 @@
 import { GalleryVerticalEnd } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState, useCallback, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { Breadcrumb } from '@/components/layout/Breadcrumb';
 import { toDataUrlAndResize, getMaxDimensionForQuality } from '@/utils/imageResize';
-import { pageVariants, screenTransition, cardVariants, imageVariants, springTransition } from '@/utils/transitions';
 
 interface UploadScreenProps {
   onImageSelected: (imageData: string) => void;
@@ -105,15 +104,7 @@ export function UploadScreen({ onImageSelected, onBack, cooldownSeconds = 0 }: U
   );
 
   return (
-    <motion.div
-      custom="forward"
-      variants={pageVariants}
-      initial="initial"
-      animate="animate"
-      exit="exit"
-      transition={screenTransition}
-      className="bg-[#141414] min-h-screen flex flex-col"
-    >
+    <div className="bg-[#141414] min-h-screen flex flex-col">
       <Header onLogoClick={onBack} />
 
       <Breadcrumb items={['Upload', 'Generate', 'View']} activeIndex={0} showBack onBack={onBack} />
@@ -122,14 +113,7 @@ export function UploadScreen({ onImageSelected, onBack, cooldownSeconds = 0 }: U
       <div className="bg-neutral-900 box-border flex flex-col gap-[40px] items-center pb-[40px] pt-[24px] px-[24px] relative w-full min-h-[640px]">
         <div className="w-full max-w-md mx-auto">
           {/* Card */}
-          <motion.div
-            variants={cardVariants}
-            initial="initial"
-            animate="animate"
-            exit="exit"
-            transition={screenTransition}
-            className="bg-[#1e1e1e] box-border flex flex-col gap-[24px] items-start px-0 py-[24px] relative rounded-[24px] shrink-0 w-full border border-neutral-800 shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]"
-          >
+          <div className="bg-[#1e1e1e] box-border flex flex-col gap-[24px] items-start px-0 py-[24px] relative rounded-[24px] shrink-0 w-full border border-neutral-800 shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
             {/* Header */}
             <div className="box-border flex gap-[6px] items-start justify-end px-[24px] py-0 relative shrink-0 w-full">
               <div className="flex flex-col gap-[6px] items-start relative shrink-0 w-full">
@@ -158,39 +142,25 @@ export function UploadScreen({ onImageSelected, onBack, cooldownSeconds = 0 }: U
                 onDragLeave={onDragLeave}
                 onClick={() => fileInputRef.current?.click()}
               >
-                <AnimatePresence mode="wait">
-                  {preview ? (
-                    /* Image Preview */
-                    <motion.img
-                      key="preview"
-                      layoutId="uploadImage"
-                      variants={imageVariants}
-                      initial="initial"
-                      animate="animate"
-                      exit="exit"
-                      transition={springTransition}
-                      src={preview}
-                      alt="Preview"
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    /* Empty State */
-                    <motion.div
-                      key="empty"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      className="box-border flex flex-col gap-[12px] h-[200px] items-center justify-center overflow-clip px-[12px] py-[4px] relative w-full"
-                    >
-                      <GalleryVerticalEnd className="h-[32px] w-[32px] text-white" strokeWidth={1.5} />
-                      <div className="flex gap-[10px] items-center justify-center relative shrink-0 w-full">
-                        <p className="font-normal text-[14px] leading-[20px] text-[#767676] text-center w-full">
-                          JPG, PNG, HEIC, WebP
-                        </p>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                {preview ? (
+                  /* Image Preview */
+                  <motion.img
+                    layoutId="uploadImage"
+                    src={preview}
+                    alt="Preview"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  /* Empty State */
+                  <div className="box-border flex flex-col gap-[12px] h-[200px] items-center justify-center overflow-clip px-[12px] py-[4px] relative w-full">
+                    <GalleryVerticalEnd className="h-[32px] w-[32px] text-white" strokeWidth={1.5} />
+                    <div className="flex gap-[10px] items-center justify-center relative shrink-0 w-full">
+                      <p className="font-normal text-[14px] leading-[20px] text-[#767676] text-center w-full">
+                        JPG, PNG, HEIC, WebP
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -222,7 +192,7 @@ export function UploadScreen({ onImageSelected, onBack, cooldownSeconds = 0 }: U
                 </div>
               </motion.button>
             </div>
-          </motion.div>
+          </div>
         </div>
 
         {/* Hidden file input */}
@@ -236,6 +206,6 @@ export function UploadScreen({ onImageSelected, onBack, cooldownSeconds = 0 }: U
       </div>
 
       <Footer />
-    </motion.div>
+    </div>
   );
 }

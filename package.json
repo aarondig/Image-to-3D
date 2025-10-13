@@ -4,7 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "concurrently \"npm run dev:api\" \"npm run dev:frontend\" --names \"API,UI\" --prefix-colors \"blue,green\"",
+    "dev:api": "vercel dev --listen 3000",
+    "dev:frontend": "vite",
     "dev:vercel": "vercel dev",
     "build": "vite build",
     "lint": "eslint .",
@@ -35,6 +37,7 @@
     "@types/three": "^0.180.0",
     "@vercel/build-utils": "^12.1.2",
     "@vitejs/plugin-react": "^5.0.3",
+    "concurrently": "^9.2.1",
     "eslint": "^9.36.0",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.20",

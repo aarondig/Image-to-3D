@@ -3,7 +3,6 @@ import { Loader2 } from 'lucide-react';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { Breadcrumb } from '@/components/layout/Breadcrumb';
-import { pageVariants, screenTransition, cardVariants, staggerContainer, staggerItem } from '@/utils/transitions';
 
 interface ProcessingScreenProps {
   image: string;
@@ -25,32 +24,16 @@ export function ProcessingScreen({
   const progressPercent = Math.round(progress * 100);
 
   return (
-    <motion.div
-      custom="forward"
-      variants={pageVariants}
-      initial="initial"
-      animate="animate"
-      exit="exit"
-      transition={screenTransition}
-      className="bg-[#141414] min-h-screen flex flex-col"
-    >
+    <div className="bg-[#141414] min-h-screen flex flex-col">
       <Header onLogoClick={onBack} />
 
       <Breadcrumb items={['Upload', 'Generate', 'View']} activeIndex={isComplete ? 2 : 1} showBack onBack={onBack} />
 
       {/* Canvas / Main Content */}
       <div className="bg-neutral-900 box-border flex flex-col gap-[40px] items-center pb-[40px] pt-[24px] px-[24px] relative w-full min-h-[640px]">
-        <motion.div
-          variants={staggerContainer}
-          initial="initial"
-          animate="animate"
-          className="w-full max-w-md mx-auto flex flex-col gap-[24px]"
-        >
+        <div className="w-full max-w-md mx-auto flex flex-col gap-[24px]">
           {/* Header Card */}
-          <motion.div
-            variants={staggerItem}
-            className="bg-[#1e1e1e] box-border flex flex-col gap-[24px] items-start px-[24px] py-[24px] relative rounded-[24px] shrink-0 w-full border border-neutral-800 shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]"
-          >
+          <div className="bg-[#1e1e1e] box-border flex flex-col gap-[24px] items-start px-[24px] py-[24px] relative rounded-[24px] shrink-0 w-full border border-neutral-800 shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
             {/* Header with Icon */}
             <div className="flex items-center justify-between relative shrink-0 w-full">
               <div className="flex flex-col gap-[6px] items-start relative shrink-0 flex-1">
@@ -113,11 +96,11 @@ export function ProcessingScreen({
                 </div>
               </div>
             </div>
-          </motion.div>
-        </motion.div>
+          </div>
+        </div>
       </div>
 
       <Footer />
-    </motion.div>
+    </div>
   );
 }
