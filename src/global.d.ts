@@ -1,7 +1,2 @@
-
-import { ThreeElements } from '@react-three/fiber';
-declare global {
-	namespace JSX {
-		interface IntrinsicElements extends ThreeElements {}
-	}
-}
+// This file intentionally left empty
+// JSX type extensions for Three.js are handled by @react-three/fiber

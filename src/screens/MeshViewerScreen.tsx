@@ -103,7 +103,6 @@ export function MeshViewerScreen({
         {/* Canvas Section */}
         <div className="bg-neutral-900 flex flex-col gap-10 pb-10 pt-6 px-6 relative flex-1">
           {/* Card with Controls */}
-             <AnimatePresence>
           <motion.div
             variants={cardVariants}
             initial="initial"
@@ -133,7 +132,7 @@ export function MeshViewerScreen({
           </div>
 
           {/* Format Selector Modal */}
-       
+          <AnimatePresence>
             {showFormatSelector && (
               <motion.div
                 initial={{ opacity: 0, height: 0 }}
@@ -165,7 +164,7 @@ export function MeshViewerScreen({
                 </div>
               </motion.div>
             )}
-          
+          </AnimatePresence>
         </motion.div>
 
         {/* 3D Canvas */}
@@ -181,7 +180,7 @@ export function MeshViewerScreen({
               onReset={() => window.location.reload()}
             >
               <Canvas
-                camera={{ position: [0, 0, 5], fov: 50 }}
+                camera={{ position: [0, 0, 2], fov: 50 }}
                 style={{ touchAction: 'none' }}
                 gl={{ alpha: true }}
               >
@@ -198,7 +197,7 @@ export function MeshViewerScreen({
                   autoRotateSpeed={2}
                   enableDamping
                   dampingFactor={0.05}
-                  minDistance={2}
+                  minDistance={1.5}
                   maxDistance={10}
                   enabled={true}
                 />
@@ -206,7 +205,6 @@ export function MeshViewerScreen({
             </ErrorBoundary>
           </div>
         </motion.div>
-        </AnimatePresence>
       </div>
 
       {/* Footer */}

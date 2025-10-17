@@ -1,5 +1,5 @@
 import { Loader2 } from 'lucide-react';
-import { useState, useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 import { useSpring, animated } from '@react-spring/web';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
@@ -21,7 +21,6 @@ interface ProcessingScreenProps {
   progress: number;
   currentPhase: Phase;
   phaseHistory: PhaseData[];
-  phaseStartTime: number;
   queuePosition?: string;
   engineName?: string;
   isComplete?: boolean;
@@ -77,7 +76,6 @@ export function ProcessingScreen({
   progress,
   currentPhase,
   phaseHistory,
-  phaseStartTime,
   queuePosition,
   engineName,
   isComplete,
@@ -85,23 +83,6 @@ export function ProcessingScreen({
 }: ProcessingScreenProps) {
   const progressPercent = Math.round(progress * 100);
   const currentConfig = PHASE_CONFIG[currentPhase];
-
-  // Countdown timer for active phase
-  const [countdown, setCountdown] = useState<string>('');
-
-  useEffect(() => {
-    const updateCountdown = () => {
-      const elapsed = Date.now() - phaseStartTime;
-      const remainingMs = Math.max(0, 8000 - elapsed); // 8 second countdown
-      const seconds = Math.ceil(remainingMs / 1000);
-      setCountdown(`${seconds}s`);
-    };
-
-    updateCountdown();
-    const interval = setInterval(updateCountdown, 100);
-
-    return () => clearInterval(interval);
-  }, [phaseStartTime]);
 
   // Build ordered list of phases to render
   // Current phase at top, followed by history in reverse order
@@ -127,7 +108,7 @@ export function ProcessingScreen({
       isActive: true,
       showConnector: phaseHistory.length > 0,
       engineBadge: engineName,
-      rightLabel: queuePosition || countdown,
+      rightLabel: queuePosition,
     });
 
     // Add history in reverse order (most recent first)
@@ -145,7 +126,7 @@ export function ProcessingScreen({
     });
 
     return phases;
-  }, [currentPhase, currentConfig, phaseHistory, engineName, queuePosition, countdown]);
+  }, [currentPhase, currentConfig, phaseHistory, engineName, queuePosition]);
 
   const imageSpring = useSpring({
     opacity: 1,
@@ -225,7 +206,7 @@ export function ProcessingScreen({
             </div>
           </div>
 
-          {/* Progressive Phase Tracking - All phases rendered at once */}
+          {/* Progressive Phase Tracking */}
           <div className="flex flex-col items-start px-[24px] relative shrink-0 w-full">
             {orderedPhases.map((phase) => (
               <ProgressStage

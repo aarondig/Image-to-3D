@@ -18,7 +18,6 @@ interface MeshJobState {
   currentPhase: Phase;
   phaseHistory: PhaseData[];
   phaseStartTime: number;
-  loadingStartTime: number; // Overall loading start time for the 8-second animation
   queuePosition?: string;
   engineName?: string;
   asset?: {
@@ -84,37 +83,40 @@ const PHASE_CONFIG: Record<Phase, { label: string; description: string; progress
   },
 };
 
-// Determine phase from progress if not provided by API
-// Currently unused - phase is determined by simulation timing
-// function determinePhaseFromProgress(progress: number): Phase {
-//   if (progress >= 0.95) return 'finalizing';
-//   if (progress >= 0.85) return 'compiling';
-//   if (progress >= 0.65) return 'texturing';
-//   if (progress >= 0.45) return 'reconstruction';
-//   if (progress >= 0.25) return 'depth';
-//   if (progress >= 0.15) return 'preprocessing';
-//   if (progress >= 0.05) return 'queued';
-//   return 'uploading';
-// }
+// Determine phase from progress based on API data
+function determinePhaseFromProgress(progress: number): Phase {
+  if (progress >= 0.95) return 'finalizing';
+  if (progress >= 0.85) return 'compiling';
+  if (progress >= 0.65) return 'texturing';
+  if (progress >= 0.45) return 'reconstruction';
+  if (progress >= 0.25) return 'depth';
+  if (progress >= 0.15) return 'preprocessing';
+  if (progress >= 0.05) return 'queued';
+  return 'uploading';
+}
 
 /**
  * Hook to poll mesh generation job status
- * Automatically stops polling on terminal states (SUCCEEDED, FAILED, TIMEOUT)
- * Implements exponential backoff after 60 seconds
- * Tracks phase progression and history for progressive UI
  *
- * SIMULATED LOADING: Always shows 8-second loading animation regardless of cache/API speed
+ * TWO MODES:
+ * 1. REAL API MODE (for new uploads): Uses actual API progress and phases
+ * 2. SIMULATED MODE (for cached uploads): Uses config.ts timing for smooth 8-second animation
+ *
  * @param taskId - The task ID to poll for status
- * @param preloadedAssetUrl - Optional cached model URL to use instead of polling API
+ * @param isCached - Whether this is a cached upload (uses simulated loading)
+ * @param cachedAssetUrl - The cached model URL (if cached)
  */
-export function useMeshJob(taskId: string | null, preloadedAssetUrl?: string | null): MeshJobState {
+export function useMeshJob(
+  taskId: string | null,
+  isCached: boolean = false,
+  cachedAssetUrl?: string | null
+): MeshJobState {
   const [state, setState] = useState<MeshJobState>({
     status: 'IDLE',
     progress: 0,
     currentPhase: 'uploading',
     phaseHistory: [],
     phaseStartTime: Date.now(),
-    loadingStartTime: Date.now(),
     queuePosition: undefined,
     engineName: undefined,
     asset: null,
@@ -130,7 +132,6 @@ export function useMeshJob(taskId: string | null, preloadedAssetUrl?: string | n
         currentPhase: 'uploading',
         phaseHistory: [],
         phaseStartTime: Date.now(),
-        loadingStartTime: Date.now(),
         queuePosition: undefined,
         engineName: undefined,
         asset: null,
@@ -140,138 +141,104 @@ export function useMeshJob(taskId: string | null, preloadedAssetUrl?: string | n
       return;
     }
 
-    // Store taskId in a constant to narrow the type
     const currentTaskId: string = taskId;
-
     let stopped = false;
-    let pollInterval = config.pollIntervalMs; // Start at 5 seconds
-    const startTime = Date.now();
-    const simulatedStartTime = Date.now();
 
-    // Store the actual API result when received
-    let actualResult: StatusResponse | null = null;
-    let hasReceivedResult = false;
+    // ========== CACHED MODE: Simulated Loading ==========
+    if (isCached && cachedAssetUrl) {
+      console.log('⚡ [useMeshJob] CACHED MODE: Using simulated loading');
 
-    // Simulated progress updater (runs every 50ms for smooth animation)
-    const progressInterval = setInterval(() => {
-      if (stopped) return;
+      const simulatedStartTime = Date.now();
 
-      const elapsed = Date.now() - simulatedStartTime;
-      const totalDuration = config.totalLoadingDurationMs;
+      const progressInterval = setInterval(() => {
+        if (stopped) return;
 
-      // Calculate progress (0 to 1) based on elapsed time
-      const simulatedProgress = Math.min(elapsed / totalDuration, 1);
+        const elapsed = Date.now() - simulatedStartTime;
+        const totalDuration = config.totalLoadingDurationMs;
+        const simulatedProgress = Math.min(elapsed / totalDuration, 1);
 
-      // Determine current phase based on elapsed time
-      const phaseTimings = config.phaseTimings;
-      let currentPhase: Phase = 'uploading';
+        // Determine current phase based on elapsed time
+        const phaseTimings = config.phaseTimings;
+        let currentPhase: Phase = 'uploading';
 
-      if (elapsed >= phaseTimings.finalizing) currentPhase = 'finalizing';
-      else if (elapsed >= phaseTimings.compiling) currentPhase = 'compiling';
-      else if (elapsed >= phaseTimings.texturing) currentPhase = 'texturing';
-      else if (elapsed >= phaseTimings.reconstruction) currentPhase = 'reconstruction';
-      else if (elapsed >= phaseTimings.depth) currentPhase = 'depth';
-      else if (elapsed >= phaseTimings.preprocessing) currentPhase = 'preprocessing';
-      else if (elapsed >= phaseTimings.queued) currentPhase = 'queued';
+        if (elapsed >= phaseTimings.finalizing) currentPhase = 'finalizing';
+        else if (elapsed >= phaseTimings.compiling) currentPhase = 'compiling';
+        else if (elapsed >= phaseTimings.texturing) currentPhase = 'texturing';
+        else if (elapsed >= phaseTimings.reconstruction) currentPhase = 'reconstruction';
+        else if (elapsed >= phaseTimings.depth) currentPhase = 'depth';
+        else if (elapsed >= phaseTimings.preprocessing) currentPhase = 'preprocessing';
+        else if (elapsed >= phaseTimings.queued) currentPhase = 'queued';
 
-      setState((prev) => {
-        // Check if phase has changed
-        const phaseChanged = currentPhase !== prev.currentPhase;
+        setState((prev) => {
+          const phaseChanged = currentPhase !== prev.currentPhase;
+          let newPhaseHistory = [...prev.phaseHistory];
+          let newPhaseStartTime = prev.phaseStartTime;
 
-        // Build new phase history
-        let newPhaseHistory = [...prev.phaseHistory];
-        let newPhaseStartTime = prev.phaseStartTime;
-
-        if (phaseChanged) {
-          // Add previous phase to history
-          if (prev.currentPhase) {
+          if (phaseChanged && prev.currentPhase) {
             const prevConfig = PHASE_CONFIG[prev.currentPhase];
             newPhaseHistory.push({
               phase: prev.currentPhase,
               label: prevConfig.label,
               description: prevConfig.description,
               timestamp: Date.now(),
-              queuePosition: prev.queuePosition,
-              engineName: prev.engineName,
             });
+            newPhaseStartTime = Date.now();
           }
-          // Reset phase start time for new phase
-          newPhaseStartTime = Date.now();
-        }
 
-        // If we've received the actual result and simulation is complete
-        if (hasReceivedResult && simulatedProgress >= 1 && actualResult) {
+          // If simulation is complete, return final state
+          if (simulatedProgress >= 1) {
+            clearInterval(progressInterval);
+            return {
+              status: 'SUCCEEDED',
+              progress: 1,
+              message: 'Mesh generation complete',
+              currentPhase: 'ready',
+              phaseHistory: newPhaseHistory,
+              phaseStartTime: newPhaseStartTime,
+              queuePosition: undefined,
+              engineName: undefined,
+              asset: {
+                url: cachedAssetUrl,
+                format: 'glb',
+                sizeBytes: 0,
+              },
+              error: null,
+              isLoading: false,
+            };
+          }
+
+          // Continue simulated progress
           return {
-            status: actualResult.status,
-            progress: 1,
-            message: actualResult.message,
-            currentPhase: 'ready',
+            status: 'RUNNING',
+            progress: simulatedProgress,
+            message: `Generating mesh... ${Math.round(simulatedProgress * 100)}%`,
+            currentPhase,
             phaseHistory: newPhaseHistory,
             phaseStartTime: newPhaseStartTime,
-            loadingStartTime: prev.loadingStartTime,
-            queuePosition: actualResult.queuePosition,
-            engineName: actualResult.engineName,
-            asset: actualResult.asset || null,
-            error: actualResult.error || null,
-            isLoading: false,
-          };
-        }
-
-        // If we have a preloaded asset (cached result) and simulation is complete
-        if (preloadedAssetUrl && simulatedProgress >= 1) {
-          return {
-            status: 'SUCCEEDED',
-            progress: 1,
-            message: 'Mesh generation complete',
-            currentPhase: 'ready',
-            phaseHistory: newPhaseHistory,
-            phaseStartTime: newPhaseStartTime,
-            loadingStartTime: prev.loadingStartTime,
-            queuePosition: prev.queuePosition,
-            engineName: prev.engineName,
-            asset: {
-              url: preloadedAssetUrl,
-              format: 'glb',
-              sizeBytes: 0,
-            },
+            queuePosition: undefined,
+            engineName: undefined,
+            asset: null,
             error: null,
             isLoading: false,
           };
-        }
+        });
+      }, 50);
 
-        // Continue showing simulated progress
-        return {
-          status: prev.status === 'IDLE' ? 'RUNNING' : prev.status,
-          progress: simulatedProgress,
-          message: prev.message,
-          currentPhase,
-          phaseHistory: newPhaseHistory,
-          phaseStartTime: newPhaseStartTime,
-          loadingStartTime: prev.loadingStartTime,
-          queuePosition: prev.queuePosition,
-          engineName: prev.engineName,
-          asset: prev.asset,
-          error: prev.error,
-          isLoading: prev.isLoading,
-        };
-      });
-
-      // Stop progress simulation when complete
-      if (simulatedProgress >= 1) {
+      return () => {
+        stopped = true;
         clearInterval(progressInterval);
-      }
-    }, 50); // Update every 50ms for smooth animation
+      };
+    }
+
+    // ========== REAL API MODE: Actual Progress ==========
+    console.log('📡 [useMeshJob] REAL API MODE: Using actual API progress');
+
+    let pollInterval = config.pollIntervalMs;
+    const startTime = Date.now();
 
     async function poll() {
       if (stopped) return;
 
-      // Skip API polling if we have a preloaded asset (cached result)
-      if (preloadedAssetUrl) {
-        console.log('⚡ [useMeshJob] Using cached model, skipping API poll');
-        return;
-      }
-
-      // Guard: Don't fetch if taskId is invalid
       if (!currentTaskId || typeof currentTaskId !== 'string' || currentTaskId.trim() === '') {
         console.error('useMeshJob: Invalid taskId, stopping poll', currentTaskId);
         return;
@@ -285,7 +252,6 @@ export function useMeshJob(taskId: string | null, preloadedAssetUrl?: string | n
 
         if (!response.ok) {
           console.error('Status API error:', response.status);
-          // Continue polling on errors (transient network issues)
           setState((prev) => ({ ...prev, isLoading: false }));
           scheduleNextPoll();
           return;
@@ -293,47 +259,51 @@ export function useMeshJob(taskId: string | null, preloadedAssetUrl?: string | n
 
         const data: StatusResponse = await response.json();
 
-        // Store the actual result but don't immediately update the UI
-        actualResult = data;
-        hasReceivedResult = true;
+        // Determine phase from API data or progress
+        const newPhase = data.phase || determinePhaseFromProgress(data.progress);
 
-        setState((prev) => ({
-          ...prev,
-          queuePosition: data.queuePosition,
-          engineName: data.engineName,
-          message: data.message,
-          isLoading: false,
-        }));
+        setState((prev) => {
+          const phaseChanged = newPhase !== prev.currentPhase;
+          let newPhaseHistory = [...prev.phaseHistory];
+          let newPhaseStartTime = prev.phaseStartTime;
+
+          if (phaseChanged && prev.currentPhase) {
+            const prevConfig = PHASE_CONFIG[prev.currentPhase];
+            newPhaseHistory.push({
+              phase: prev.currentPhase,
+              label: prevConfig.label,
+              description: prevConfig.description,
+              timestamp: Date.now(),
+              queuePosition: data.queuePosition,
+              engineName: data.engineName,
+            });
+            newPhaseStartTime = Date.now();
+          }
+
+          return {
+            status: data.status,
+            progress: data.progress,
+            message: data.message,
+            currentPhase: newPhase,
+            phaseHistory: newPhaseHistory,
+            phaseStartTime: newPhaseStartTime,
+            queuePosition: data.queuePosition,
+            engineName: data.engineName,
+            asset: data.asset || null,
+            error: data.error || null,
+            isLoading: false,
+          };
+        });
 
         // Stop polling on terminal states
         const terminalStates: JobStatus[] = ['SUCCEEDED', 'FAILED', 'TIMEOUT'];
         if (terminalStates.includes(data.status)) {
-          // If it's an error state, show immediately
-          if (data.status === 'FAILED' || data.status === 'TIMEOUT') {
-            clearInterval(progressInterval);
-            setState({
-              status: data.status,
-              progress: 0,
-              message: data.message,
-              currentPhase: 'error',
-              phaseHistory: [],
-              phaseStartTime: Date.now(),
-              loadingStartTime: simulatedStartTime,
-              queuePosition: data.queuePosition,
-              engineName: data.engineName,
-              asset: null,
-              error: data.error || 'An error occurred',
-              isLoading: false,
-            });
-          }
-          return; // Stop polling
+          return;
         }
 
-        // Continue polling
         scheduleNextPoll();
       } catch (error) {
         console.error('Error polling status:', error);
-        // Continue polling on fetch errors
         setState((prev) => ({ ...prev, isLoading: false }));
         scheduleNextPoll();
       }
@@ -342,24 +312,20 @@ export function useMeshJob(taskId: string | null, preloadedAssetUrl?: string | n
     function scheduleNextPoll() {
       if (stopped) return;
 
-      // Implement exponential backoff after 60 seconds
       const elapsed = Date.now() - startTime;
       if (elapsed > 60000) {
-        pollInterval = 8000; // Increase to 8 seconds after 1 minute
+        pollInterval = 8000;
       }
 
       setTimeout(poll, pollInterval);
     }
 
-    // Start polling immediately
     poll();
 
-    // Cleanup function
     return () => {
       stopped = true;
-      clearInterval(progressInterval);
     };
-  }, [taskId, preloadedAssetUrl]);
+  }, [taskId, isCached, cachedAssetUrl]);
 
   return state;
 }

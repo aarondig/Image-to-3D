@@ -1,0 +1,147 @@
+import { Suspense } from 'react';
+import { Canvas } from '@react-three/fiber';
+import { OrbitControls, Environment, useGLTF, Center } from '@react-three/drei';
+import { ErrorBoundary } from 'react-error-boundary';
+import { DesktopLayout } from '@/components/desktop/DesktopLayout';
+import { DesktopSidebar } from '@/components/desktop/DesktopSidebar';
+import { GlassmorphicNav } from '@/components/desktop/GlassmorphicNav';
+import { LoadingCube } from '@/components/desktop/LoadingCube';
+
+interface DesktopViewerProps {
+  modelUrl: string;
+  onUploadAnother: () => void;
+}
+
+function Model({ url }: { url: string }) {
+  if (!url?.trim()) {
+    throw new Error('Invalid model URL provided');
+  }
+
+  const proxyUrl = `/api/proxy-model?url=${encodeURIComponent(url)}`;
+  const gltf = useGLTF(proxyUrl, true, true);
+
+  if (!gltf?.scene) {
+    throw new Error('Model scene is undefined');
+  }
+
+  return (
+    <Center>
+      <primitive object={gltf.scene} />
+    </Center>
+  );
+}
+
+function ErrorFallback({ error, resetErrorBoundary }: { error: Error; resetErrorBoundary?: () => void }) {
+  return (
+    <div className="flex h-full w-full items-center justify-center p-8">
+      <div className="rounded-2xl border border-red-800 bg-red-950/20 p-6 text-center max-w-md">
+        <p className="text-base font-semibold text-red-400 mb-2">Failed to load 3D model</p>
+        <p className="text-sm text-neutral-400 mb-4">{error.message || 'An unknown error occurred'}</p>
+        {resetErrorBoundary && (
+          <button
+            onClick={resetErrorBoundary}
+            className="bg-neutral-800 border border-neutral-700 rounded-full px-4 py-2 hover:bg-neutral-700 transition-colors"
+          >
+            <p className="text-sm font-medium text-neutral-50">Try Again</p>
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export function DesktopViewer({ modelUrl, onUploadAnother }: DesktopViewerProps) {
+  const [showFormatSelector, setShowFormatSelector] = useState(false);
+
+  const handleDownload = () => {
+    const downloadUrl = `/api/proxy-model?url=${encodeURIComponent(modelUrl)}`;
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    link.download = 'model.glb';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setShowFormatSelector(false);
+  };
+
+  if (!modelUrl?.trim()) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-neutral-900">
+        <div className="rounded-lg border border-destructive bg-destructive/10 p-4 text-center">
+          <p className="text-sm text-destructive">Invalid model URL</p>
+          <button
+            onClick={onUploadAnother}
+            className="mt-4 px-4 py-2 bg-primary text-primary-foreground rounded-full"
+          >
+            Upload Another
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <DesktopLayout
+      sidebar={<DesktopSidebar onLogoClick={onUploadAnother} />}
+      content={
+        <div className="flex flex-col h-full">
+          {/* Breadcrumb */}
+          <div className="h-[84px] border-b border-neutral-800 flex items-center justify-end px-6">
+            <div className="flex gap-1.5 items-center">
+              <p className="text-sm font-normal text-neutral-400">Upload</p>
+              <span className="text-sm text-neutral-400">/</span>
+              <p className="text-sm font-normal text-neutral-400">Generate</p>
+              <span className="text-sm text-neutral-400">/</span>
+              <p className="text-sm font-medium text-neutral-50">View</p>
+            </div>
+          </div>
+
+          {/* Canvas Container - Full width */}
+          <div className="flex-1 p-6 pb-10">
+            <div className="relative bg-[#1e1e1e] border border-neutral-800 rounded-[24px] w-full h-full overflow-hidden">
+              {/* Glassmorphic Nav Bar */}
+              <div className="absolute top-6 left-6 right-6 z-10">
+                <GlassmorphicNav
+                  onDownload={handleDownload}
+                  onNewUpload={onUploadAnother}
+                />
+              </div>
+
+              {/* 3D Canvas */}
+              <div className="absolute inset-0">
+                <ErrorBoundary
+                  FallbackComponent={ErrorFallback}
+                  onReset={() => window.location.reload()}
+                >
+                  <Canvas
+                    camera={{ position: [0, 0, 2], fov: 50 }}
+                    style={{ touchAction: 'none' }}
+                    gl={{ alpha: true }}
+                  >
+                    <ambientLight intensity={0.5} />
+                    <directionalLight position={[10, 10, 5]} intensity={1} />
+                    <directionalLight position={[-10, -10, -5]} intensity={0.3} />
+                    <Suspense fallback={<LoadingCube />}>
+                      <Model url={modelUrl} />
+                    </Suspense>
+                    <Environment preset="city" />
+                    <OrbitControls
+                      makeDefault
+                      autoRotate={true}
+                      autoRotateSpeed={2}
+                      enableDamping
+                      dampingFactor={0.05}
+                      minDistance={1.5}
+                      maxDistance={10}
+                      enabled={true}
+                    />
+                  </Canvas>
+                </ErrorBoundary>
+              </div>
+            </div>
+          </div>
+        </div>
+      }
+    />
+  );
+}

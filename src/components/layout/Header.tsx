@@ -17,7 +17,7 @@ export function Header({ onLogoClick }: HeaderProps) {
         </button>
 
         {/* Social Links */}
-        <div className="flex gap-[12px] items-center justify-end relative shrink-0">
+        {/* <div className="flex gap-[12px] items-center justify-end relative shrink-0">
           <a
             href="https://linkedin.com/in/aarondiggdon"
             target="_blank"
@@ -34,7 +34,7 @@ export function Header({ onLogoClick }: HeaderProps) {
           >
             <img src="/icons/uparrow.svg" alt="External link" className="h-[22px] w-[22px] transition-all group-hover:brightness-0" />
           </a>
-        </div>
+        </div> */}
       </div>
     </header>
   );

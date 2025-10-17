@@ -1,19 +1,22 @@
 /**
  * Client-side image caching system
- * Caches 3D model results based on image content hash
+ * Caches 3D model task IDs based on image content hash
  * Prevents duplicate API calls during testing
+ *
+ * NOTE: We only cache taskId, not modelUrl, because signed URLs expire.
+ * When retrieving from cache, we fetch fresh status to get a valid signed URL.
  */
 
 export interface CachedResult {
   taskId: string;
-  modelUrl: string | null;
+  modelUrl: string | null; // Deprecated - kept for backward compatibility, but not used
   imageHash: string;
   timestamp: number;
   status: 'SUCCEEDED' | 'FAILED';
 }
 
 const CACHE_KEY_PREFIX = 'image3d_cache_';
-const CACHE_DURATION_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+const CACHE_DURATION_MS = 30 * 24 * 60 * 60 * 1000; // 30 days (longer since we fetch fresh URLs)
 
 /**
  * Generate SHA-256 hash from image data URL

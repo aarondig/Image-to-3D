@@ -15,21 +15,26 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(400).json({ error: 'Missing url parameter' });
   }
 
+  // URL will be decoded by Vercel automatically, but let's ensure it's properly decoded
+  const decodedUrl = decodeURIComponent(url);
+
+  console.log('[proxy-model] Decoded URL', { original: url, decoded: decodedUrl });
+
   // Validate it's a Tripo URL
-  if (!url.startsWith('https://tripo-data.rg1.data.tripo3d.com/')) {
-    console.error('[proxy-model] Invalid URL - not from Tripo CDN', { url });
+  if (!decodedUrl.startsWith('https://tripo-data.rg1.data.tripo3d.com/')) {
+    console.error('[proxy-model] Invalid URL - not from Tripo CDN', { url: decodedUrl });
     return res.status(400).json({ error: 'Invalid URL - must be from Tripo CDN' });
   }
 
   // Convert GLB URL to USDZ if requested
-  let fetchUrl = url;
+  let fetchUrl = decodedUrl;
   let contentType = 'model/gltf-binary';
 
   if (format === 'usdz') {
     // Replace .glb with .usdz in the URL
-    fetchUrl = url.replace(/\.glb$/i, '.usdz');
+    fetchUrl = decodedUrl.replace(/\.glb$/i, '.usdz');
     contentType = 'model/vnd.usdz+zip';
-    console.log('[proxy-model] Converting to USDZ format', { originalUrl: url, usdzUrl: fetchUrl });
+    console.log('[proxy-model] Converting to USDZ format', { originalUrl: decodedUrl, usdzUrl: fetchUrl });
   }
 
   console.log('[proxy-model] Fetching from Tripo CDN', { fetchUrl, format });
