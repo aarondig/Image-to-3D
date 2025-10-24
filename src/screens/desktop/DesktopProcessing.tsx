@@ -1,7 +1,7 @@
 import { Suspense, useMemo } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { Environment } from '@react-three/drei';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Loader2, ChevronLeft } from 'lucide-react';
 import { useSpring, animated } from '@react-spring/web';
 import { DesktopLayout3Panel } from '@/components/desktop/DesktopLayout3Panel';
@@ -139,23 +139,63 @@ export function DesktopProcessing({
     <DesktopLayout3Panel
       panel1={
         /* PANEL 1: Collapsed Sidebar - 84px */
-        <div className="flex flex-col h-full w-[84px] border-r border-neutral-800 shrink-0">
+        <motion.div
+          className="flex flex-col h-full w-[84px] border-r border-neutral-800 shrink-0"
+          initial={{ width: 416, opacity: 1 }}
+          animate={{ width: 84, opacity: 1 }}
+          transition={{
+            type: "spring",
+            stiffness: 280,
+            damping: 60,
+            mass: 1,
+          }}
+        >
           {/* Header with Logo */}
-          <div className="h-[84px] border-b border-neutral-800 flex items-center justify-center px-6">
-            <button
+          <motion.div
+            className="h-[84px] border-b border-neutral-800 flex items-center justify-center px-6"
+            initial={{ justifyContent: 'space-between' }}
+            animate={{ justifyContent: 'center' }}
+            transition={{
+              type: "spring",
+              stiffness: 280,
+              damping: 60,
+            }}
+          >
+            <motion.button
+              layoutId="sidebar-logo"
               onClick={onLogoClick}
               className="cursor-pointer overflow-clip relative shrink-0 size-9"
             >
               <div className="absolute left-[1.83px] size-[32.344px] top-[1.83px]">
                 <img src="/icons/logo.svg" alt="Logo" className="w-full h-full" />
               </div>
-            </button>
-          </div>
+            </motion.button>
+          </motion.div>
 
           {/* Footer - Icons stacked vertically */}
-          <div className="flex-1 flex flex-col justify-end items-center pb-10">
-            <div className="flex flex-col gap-2">
-              <a
+          <motion.div
+            className="flex-1 flex flex-col justify-end items-center"
+            initial={{ paddingBottom: 0 }}
+            animate={{ paddingBottom: 40 }}
+            transition={{
+              type: "spring",
+              stiffness: 280,
+              damping: 60,
+            }}
+          >
+            <motion.div
+              layoutId="social-icons"
+              className="flex flex-col gap-2"
+              initial={{ flexDirection: 'row', paddingLeft: 24, paddingRight: 24 }}
+              animate={{ flexDirection: 'column', paddingLeft: 0, paddingRight: 0 }}
+              transition={{
+                type: "spring",
+                stiffness: 280,
+                damping: 60,
+              }}
+            >
+              <motion.a
+                layoutId="linkedin-icon"
                 href={safeHref("https://linkedin.com/in/aarondiggdon")}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -166,8 +206,9 @@ export function DesktopProcessing({
                   alt="LinkedIn"
                   className="h-[22px] w-[22px] transition-all group-hover:brightness-75"
                 />
-              </a>
-              <a
+              </motion.a>
+              <motion.a
+                layoutId="portfolio-icon"
                 href={safeHref("https://aarondig.com")}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -178,14 +219,25 @@ export function DesktopProcessing({
                   alt="External link"
                   className="h-[22px] w-[22px] transition-all group-hover:brightness-75"
                 />
-              </a>
-            </div>
-          </div>
-        </div>
+              </motion.a>
+            </motion.div>
+          </motion.div>
+        </motion.div>
       }
       panel2={
         /* PANEL 2: Processing Panel - 416px */
-        <div className="flex flex-col h-full w-[416px] border-r border-neutral-800 shrink-0">
+        <motion.div
+          className="flex flex-col h-full w-[416px] border-r border-neutral-800 shrink-0"
+          initial={{ x: 100, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          exit={{ x: -100, opacity: 0 }}
+          transition={{
+            type: "spring",
+            stiffness: 280,
+            damping: 60,
+            mass: 0.8,
+          }}
+        >
           {/* Header with Back Button */}
           <div className="h-[84px] border-b border-neutral-800 flex items-center px-6">
             <motion.button
@@ -199,10 +251,10 @@ export function DesktopProcessing({
           </div>
 
           {/* Content Area */}
-          <div className="flex-1 flex flex-col gap-6 p-6 overflow-y-auto">
+          <div className="flex-1 flex flex-col gap-6 p-6 overflow-hidden">
             {/* Processing Card - 368px width */}
             <motion.div
-              layoutId="upload-card"
+              layoutId="main-card"
               className="bg-[#1e1e1e] flex flex-col gap-6 p-6 rounded-2xl border border-neutral-800 shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)] w-[368px]"
             >
               {/* Header with Spinner */}
@@ -251,7 +303,7 @@ export function DesktopProcessing({
             </motion.div>
 
             {/* Phase Tracking - 368px width */}
-            <div className="flex flex-col w-[368px]">
+            <div className="flex flex-col w-[368px] overflow-hidden">
               {orderedPhases.map((phase) => (
                 <ProgressStage
                   key={phase.key}
@@ -266,7 +318,7 @@ export function DesktopProcessing({
               ))}
             </div>
           </div>
-        </div>
+        </motion.div>
       }
       panel3={
         /* PANEL 3: Canvas Area - Flexible, fills remaining space */

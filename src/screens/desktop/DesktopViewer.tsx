@@ -2,6 +2,7 @@ import { Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Environment, useGLTF, Center } from '@react-three/drei';
 import { ErrorBoundary } from 'react-error-boundary';
+import { motion } from 'framer-motion';
 import { DesktopLayout } from '@/components/desktop/DesktopLayout';
 import { GlassmorphicNav } from '@/components/desktop/GlassmorphicNav';
 import { LoadingCube } from '@/components/desktop/LoadingCube';
@@ -75,20 +76,22 @@ export function DesktopViewer({ modelUrl, onUploadAnother }: DesktopViewerProps)
         <div className="flex flex-col h-full w-[84px] border-r border-neutral-800 shrink-0">
           {/* Header with Logo */}
           <div className="h-[84px] border-b border-neutral-800 flex items-center justify-center px-6">
-            <button
+            <motion.button
+              layoutId="sidebar-logo"
               onClick={onUploadAnother}
               className="cursor-pointer overflow-clip relative shrink-0 size-9"
             >
               <div className="absolute left-[1.83px] size-[32.344px] top-[1.83px]">
                 <img src="/icons/logo.svg" alt="Logo" className="w-full h-full" />
               </div>
-            </button>
+            </motion.button>
           </div>
 
           {/* Footer - Icons stacked vertically */}
           <div className="flex-1 flex flex-col justify-end items-center pb-10">
-            <div className="flex flex-col gap-2">
-              <a
+            <motion.div layoutId="social-icons" className="flex flex-col gap-2">
+              <motion.a
+                layoutId="linkedin-icon"
                 href={safeHref("https://linkedin.com/in/aarondiggdon")}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -99,8 +102,9 @@ export function DesktopViewer({ modelUrl, onUploadAnother }: DesktopViewerProps)
                   alt="LinkedIn"
                   className="h-[22px] w-[22px] transition-all group-hover:brightness-75"
                 />
-              </a>
-              <a
+              </motion.a>
+              <motion.a
+                layoutId="portfolio-icon"
                 href={safeHref("https://aarondig.com")}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -111,8 +115,8 @@ export function DesktopViewer({ modelUrl, onUploadAnother }: DesktopViewerProps)
                   alt="External link"
                   className="h-[22px] w-[22px] transition-all group-hover:brightness-75"
                 />
-              </a>
-            </div>
+              </motion.a>
+            </motion.div>
           </div>
         </div>
       }

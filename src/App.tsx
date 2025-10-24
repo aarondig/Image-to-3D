@@ -204,9 +204,10 @@ function App() {
   };
 
   return (
-    <AnimatePresence mode="wait" initial={false}>
+    <AnimatePresence initial={false}>
       {(screen === 'HOME' || screen === 'UPLOAD') && (
         <ResponsiveScreen
+          key="home-upload-screen"
           mobile={
             <motion.div
               key="mobile-home-upload"
@@ -232,11 +233,19 @@ function App() {
                 <div className="text-white text-sm">Loading...</div>
               </div>
             }>
-              <DesktopHomeUpload
-                onImageSelected={handleImageSelected}
-                onLogoClick={handleBackFromUpload}
-                cooldownSeconds={cooldownSeconds}
-              />
+              <motion.div
+                key="desktop-home-upload"
+                initial={{ opacity: 1 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                <DesktopHomeUpload
+                  onImageSelected={handleImageSelected}
+                  onLogoClick={handleBackFromUpload}
+                  cooldownSeconds={cooldownSeconds}
+                />
+              </motion.div>
             </Suspense>
           }
         />
@@ -244,6 +253,7 @@ function App() {
 
       {screen === 'PROCESSING' && imageDataUrl && (
         <ResponsiveScreen
+          key="processing-screen"
           mobile={
             <motion.div
               key="mobile-processing"
@@ -270,17 +280,25 @@ function App() {
                 <div className="text-white text-sm">Loading...</div>
               </div>
             }>
-              <DesktopProcessing
-                image={imageDataUrl}
-                progress={jobStatus.progress}
-                currentPhase={jobStatus.currentPhase}
-                phaseHistory={jobStatus.phaseHistory}
-                queuePosition={jobStatus.queuePosition}
-                engineName={jobStatus.engineName}
-                isComplete={jobStatus.status === 'SUCCEEDED'}
-                onBack={handleBackFromProcessing}
-                onLogoClick={handleReset}
-              />
+              <motion.div
+                key="desktop-processing"
+                initial={{ opacity: 1 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                <DesktopProcessing
+                  image={imageDataUrl}
+                  progress={jobStatus.progress}
+                  currentPhase={jobStatus.currentPhase}
+                  phaseHistory={jobStatus.phaseHistory}
+                  queuePosition={jobStatus.queuePosition}
+                  engineName={jobStatus.engineName}
+                  isComplete={jobStatus.status === 'SUCCEEDED'}
+                  onBack={handleBackFromProcessing}
+                  onLogoClick={handleReset}
+                />
+              </motion.div>
             </Suspense>
           }
         />
@@ -288,6 +306,7 @@ function App() {
 
       {screen === 'MESH_VIEWER' && jobStatus.asset?.url ? (
         <ResponsiveScreen
+          key="viewer-screen"
           mobile={
             <motion.div
               key="mobile-mesh-viewer"
@@ -314,10 +333,18 @@ function App() {
                 <div className="text-white text-sm">Loading 3D viewer...</div>
               </div>
             }>
-              <DesktopViewer
-                modelUrl={jobStatus.asset.url}
-                onUploadAnother={handleReset}
-              />
+              <motion.div
+                key="desktop-viewer"
+                initial={{ opacity: 1 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                <DesktopViewer
+                  modelUrl={jobStatus.asset.url}
+                  onUploadAnother={handleReset}
+                />
+              </motion.div>
             </Suspense>
           }
         />

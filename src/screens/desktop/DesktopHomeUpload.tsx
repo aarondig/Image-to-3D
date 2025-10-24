@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef, Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Environment, useGLTF, Center } from '@react-three/drei';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { GalleryVerticalEnd } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { DesktopLayout } from '@/components/desktop/DesktopLayout';
@@ -103,7 +103,8 @@ export function DesktopHomeUpload({
       sidebar={
         /* PANEL 1: Left Sidebar - Animated 416px ↔ 84px */
         <motion.div
-          className="flex flex-col h-full border-r border-neutral-800 shrink-0 overflow-hidden"
+          className="flex flex-col h-full border-r border-neutral-800 shrink-0 overflow-hidden cursor-pointer"
+          onClick={() => !isSidebarOpen && setIsSidebarOpen(true)}
           animate={{
             width: isSidebarOpen ? 416 : 84,
           }}
@@ -142,6 +143,7 @@ export function DesktopHomeUpload({
             </motion.button>
 
             {/* Sidebar toggle icon - only visible when open */}
+           
             {isSidebarOpen && (
               <motion.button
                 initial={{ opacity: 0, scale: 0.8 }}
@@ -159,24 +161,29 @@ export function DesktopHomeUpload({
                 </svg>
               </motion.button>
             )}
+           
           </motion.div>
 
           {/* Content Area */}
-          <div className="flex-1 flex flex-col justify-between p-6 overflow-y-auto">
+          <div className="flex-1 flex flex-col justify-between p-6 overflow-hidden">
             {/* Upload Card - 368px width */}
-            <motion.div
-              layoutId="upload-card"
-              className="bg-[#1e1e1e] flex flex-col gap-6 p-6 rounded-3xl border border-neutral-800 shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)] w-[368px]"
-              animate={{
-                opacity: isSidebarOpen ? 1 : 0,
-                scale: isSidebarOpen ? 1 : 0.95,
-                x: isSidebarOpen ? 0 : -20,
-              }}
-              transition={{
-                duration: 0.3,
-                delay: isSidebarOpen ? 0.1 : 0,
-              }}
-            >
+            <div>
+            <AnimatePresence mode="wait">
+              {isSidebarOpen && (
+                <motion.div
+                  key="upload-card"
+                  layoutId="main-card"
+                  className="bg-[#1e1e1e] flex flex-col gap-6 p-6 rounded-3xl border border-neutral-800 shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)] w-[368px]"
+                  initial={{ opacity: 0, x: -30 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -30 }}
+                  transition={{
+                    type: "spring",
+                    stiffness: 280,
+                    damping: 60,
+                    mass: 0.8,
+                  }}
+                >
               {/* Header */}
               <div className="flex flex-col gap-3">
                 <div className="flex flex-col gap-2">
@@ -241,8 +248,10 @@ export function DesktopHomeUpload({
                   </p>
                 </motion.button>
               </div>
-            </motion.div>
-
+                </motion.div>
+              )}
+            </AnimatePresence>
+</div>
             {/* Footer */}
             <motion.div
               className="flex flex-col items-left justify-end"
@@ -256,7 +265,9 @@ export function DesktopHomeUpload({
               }}
             >
               {/* Name - only visible when open */}
-              <motion.p
+              <AnimatePresence>
+                {isSidebarOpen && (
+                  <motion.p
                 className="text-2xl items-right font-semibold text-white px-6 mb-6"
                  animate={{
                 opacity: isSidebarOpen ? 1 : 0,
@@ -269,13 +280,14 @@ export function DesktopHomeUpload({
               >
                 aarondig
               </motion.p>
+                )}
+              </AnimatePresence>
 
               {/* Social Icons - transition from horizontal to vertical */}
               <motion.div
-                className="flex gap-2 px-6"
+                layoutId="social-icons"
+                className="flex gap-2"
                 animate={{
-                  height: 'auto',
-                  justifySelf:  isSidebarOpen ? 'flex-end' : 'center',
                   flexDirection: isSidebarOpen ? 'row' : 'column',
                   paddingLeft: isSidebarOpen ? 24 : 0,
                   paddingRight: isSidebarOpen ? 24 : 0,
@@ -286,7 +298,8 @@ export function DesktopHomeUpload({
                   damping: 60,
                 }}
               >
-                <a
+                <motion.a
+                  layoutId="linkedin-icon"
                   href={safeHref("https://linkedin.com/in/aarondiggdon")}
                   target="_blank"
                   rel="noopener noreferrer"
@@ -297,8 +310,9 @@ export function DesktopHomeUpload({
                     alt="LinkedIn"
                     className="h-[22px] w-[22px] transition-all group-hover:brightness-75"
                   />
-                </a>
-                <a
+                </motion.a>
+                <motion.a
+                  layoutId="portfolio-icon"
                   href={safeHref("https://aarondig.com")}
                   target="_blank"
                   rel="noopener noreferrer"
@@ -309,7 +323,7 @@ export function DesktopHomeUpload({
                     alt="External link"
                     className="h-[22px] w-[22px] transition-all group-hover:brightness-75"
                   />
-                </a>
+                </motion.a>
               </motion.div>
             </motion.div>
           </div>
