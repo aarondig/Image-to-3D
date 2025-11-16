@@ -31,7 +31,12 @@ export function HomeScreen({ onGetStarted }: HomeScreenProps) {
           </div>
 
           {/* Preview Card */}
-          <motion.div className="bg-[#1e1e1e] box-border relative h-[270px] rounded-[24px] shrink-0 w-full border border-neutral-800 shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
+          <motion.div
+            className="bg-[#1e1e1e] box-border relative h-[270px] rounded-[24px] shrink-0 w-full border border-neutral-800 shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.1, ease: [0.32, 0.72, 0, 1] }}
+          >
             <div className="absolute inset-0">
               <PreviewModel />
             </div>
@@ -40,6 +45,9 @@ export function HomeScreen({ onGetStarted }: HomeScreenProps) {
           {/* CTA Button */}
           <motion.button
             onClick={onGetStarted}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2, ease: [0.32, 0.72, 0, 1] }}
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             className="bg-neutral-50 box-border flex flex-col gap-[10px] items-center justify-center px-0 py-[12px] relative rounded-[9999px] shadow-[0px_1px_2px_0px_rgba(0,0,0,0.1)] shrink-0 w-full hover:bg-neutral-100 transition-colors"

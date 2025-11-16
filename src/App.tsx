@@ -173,6 +173,13 @@ function App() {
 
 
   // Navigation handlers
+  const handleGoHome = () => {
+    setScreen('HOME');
+    setImageDataUrl(null);
+    setTaskId(null);
+    setCachedModelUrl(null);
+  };
+
   const handleReset = () => {
     setScreen('UPLOAD');
     setImageDataUrl(null);
@@ -204,17 +211,17 @@ function App() {
   };
 
   return (
-    <AnimatePresence initial={false}>
+    <AnimatePresence mode="wait">
       {(screen === 'HOME' || screen === 'UPLOAD') && (
         <ResponsiveScreen
           key="home-upload-screen"
           mobile={
             <motion.div
               key="mobile-home-upload"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.3 }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.5, ease: [0.32, 0.72, 0, 1] }}
             >
               {screen === 'HOME' ? (
                 <HomeScreen onGetStarted={handleGetStarted} />
@@ -235,14 +242,14 @@ function App() {
             }>
               <motion.div
                 key="desktop-home-upload"
-                initial={{ opacity: 1 }}
+                initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                transition={{ duration: 0.2 }}
+                transition={{ duration: 0.3 }}
               >
                 <DesktopHomeUpload
                   onImageSelected={handleImageSelected}
-                  onLogoClick={handleBackFromUpload}
+                  onLogoClick={handleGoHome}
                   cooldownSeconds={cooldownSeconds}
                 />
               </motion.div>
@@ -257,10 +264,10 @@ function App() {
           mobile={
             <motion.div
               key="mobile-processing"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.3 }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.5, ease: [0.32, 0.72, 0, 1] }}
             >
               <ProcessingScreen
                 image={imageDataUrl}
@@ -294,9 +301,8 @@ function App() {
                   phaseHistory={jobStatus.phaseHistory}
                   queuePosition={jobStatus.queuePosition}
                   engineName={jobStatus.engineName}
-                  isComplete={jobStatus.status === 'SUCCEEDED'}
                   onBack={handleBackFromProcessing}
-                  onLogoClick={handleReset}
+                  onLogoClick={handleGoHome}
                 />
               </motion.div>
             </Suspense>
@@ -310,10 +316,10 @@ function App() {
           mobile={
             <motion.div
               key="mobile-mesh-viewer"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.5 }}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.6, ease: [0.32, 0.72, 0, 1] }}
             >
               <Suspense fallback={
                 <div className="bg-[#141414] min-h-screen flex items-center justify-center">
@@ -343,6 +349,7 @@ function App() {
                 <DesktopViewer
                   modelUrl={jobStatus.asset.url}
                   onUploadAnother={handleReset}
+                  onLogoClick={handleGoHome}
                 />
               </motion.div>
             </Suspense>

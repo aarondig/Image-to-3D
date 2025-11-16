@@ -8,7 +8,6 @@ import { ErrorBoundary } from 'react-error-boundary';
 import { useSpring, animated } from '@react-spring/web';
 import { Header } from '@/components/layout/Header';
 import { safeHref } from '@/lib/safeUrl';
-import { cardVariants } from '@/utils/transitions';
 import { exportToUSDZ, downloadUSDZ } from '@/utils/usdzExporter';
 
 type ExportFormat = 'glb' | 'usdz';
@@ -201,9 +200,9 @@ export function MeshViewerScreen({
         <div className="bg-neutral-900 flex flex-col gap-10 pb-10 pt-6 px-6 relative flex-1">
           {/* Card with Controls */}
           <motion.div
-            variants={cardVariants}
-            initial="initial"
-            animate="animate"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.1, ease: [0.32, 0.72, 0, 1] }}
             layout
             className="bg-[#1e1e1e] flex flex-col relative rounded-2xl border border-neutral-800 shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)] overflow-hidden"
           >

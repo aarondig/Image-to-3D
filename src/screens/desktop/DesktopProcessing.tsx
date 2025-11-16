@@ -1,7 +1,7 @@
 import { Suspense, useMemo } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { Environment } from '@react-three/drei';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Loader2, ChevronLeft } from 'lucide-react';
 import { useSpring, animated } from '@react-spring/web';
 import { DesktopLayout3Panel } from '@/components/desktop/DesktopLayout3Panel';

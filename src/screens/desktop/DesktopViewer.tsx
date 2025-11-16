@@ -11,6 +11,7 @@ import { safeHref } from '@/lib/safeUrl';
 interface DesktopViewerProps {
   modelUrl: string;
   onUploadAnother: () => void;
+  onLogoClick?: () => void;
 }
 
 function Model({ url }: { url: string }) {
@@ -42,7 +43,7 @@ function ErrorFallback({ error, resetErrorBoundary }: { error: Error; resetError
   );
 }
 
-export function DesktopViewer({ modelUrl, onUploadAnother }: DesktopViewerProps) {
+export function DesktopViewer({ modelUrl, onUploadAnother, onLogoClick }: DesktopViewerProps) {
   const handleDownload = () => {
     const downloadUrl = `/api/proxy-model?url=${encodeURIComponent(modelUrl)}`;
     const link = document.createElement('a');
@@ -78,7 +79,7 @@ export function DesktopViewer({ modelUrl, onUploadAnother }: DesktopViewerProps)
           <div className="h-[84px] border-b border-neutral-800 flex items-center justify-center px-6">
             <motion.button
               layoutId="sidebar-logo"
-              onClick={onUploadAnother}
+              onClick={onLogoClick || onUploadAnother}
               className="cursor-pointer overflow-clip relative shrink-0 size-9"
             >
               <div className="absolute left-[1.83px] size-[32.344px] top-[1.83px]">

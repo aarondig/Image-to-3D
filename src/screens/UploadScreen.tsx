@@ -113,9 +113,19 @@ export function UploadScreen({ onImageSelected, onBack, cooldownSeconds = 0 }: U
       <div className="bg-neutral-900 box-border flex flex-col gap-[40px] items-center pb-[40px] pt-[24px] px-[24px] relative w-full min-h-[640px]">
         <div className="w-full max-w-md mx-auto">
           {/* Card */}
-          <div className="bg-[#1e1e1e] box-border flex flex-col gap-[24px] items-start px-0 py-[24px] relative rounded-[24px] shrink-0 w-full border border-neutral-800 shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
+          <motion.div
+            className="bg-[#1e1e1e] box-border flex flex-col gap-[24px] items-start px-0 py-[24px] relative rounded-[24px] shrink-0 w-full border border-neutral-800 shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.1, ease: [0.32, 0.72, 0, 1] }}
+          >
             {/* Header */}
-            <div className="box-border flex gap-[6px] items-start justify-end px-[24px] py-0 relative shrink-0 w-full">
+            <motion.div
+              className="box-border flex gap-[6px] items-start justify-end px-[24px] py-0 relative shrink-0 w-full"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5, delay: 0.2, ease: [0.32, 0.72, 0, 1] }}
+            >
               <div className="flex flex-col gap-[6px] items-start relative shrink-0 w-full">
                 <div className="flex gap-[10px] items-center relative shrink-0 w-full">
                   <p className="font-semibold text-[14px] leading-[20px] text-white w-full">
@@ -128,11 +138,17 @@ export function UploadScreen({ onImageSelected, onBack, cooldownSeconds = 0 }: U
                   </p>
                 </div>
               </div>
-            </div>
+            </motion.div>
 
             {/* Upload Area */}
-            <div className="box-border flex flex-col gap-[16px] items-start px-[24px] py-0 relative shrink-0 w-full">
-              <div
+            <motion.div
+              className="box-border flex flex-col gap-[16px] items-start px-[24px] py-0 relative shrink-0 w-full"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.3, ease: [0.32, 0.72, 0, 1] }}
+            >
+              <motion.div
+                layout
                 className={cn(
                   'bg-[#2c2c2c] h-[200px] relative rounded-[16px] shrink-0 w-full border border-neutral-700 shadow-[0px_1px_2px_0px_rgba(0,0,0,0.1)] cursor-pointer transition-colors overflow-hidden',
                   isDragging && 'border-neutral-500 bg-[#333333]'
@@ -149,6 +165,9 @@ export function UploadScreen({ onImageSelected, onBack, cooldownSeconds = 0 }: U
                     src={preview}
                     alt="Preview"
                     className="w-full h-full object-cover"
+                    transition={{
+                      layout: { duration: 0.6, ease: [0.32, 0.72, 0, 1] }
+                    }}
                   />
                 ) : (
                   /* Empty State */
@@ -161,11 +180,16 @@ export function UploadScreen({ onImageSelected, onBack, cooldownSeconds = 0 }: U
                     </div>
                   </div>
                 )}
-              </div>
-            </div>
+              </motion.div>
+            </motion.div>
 
             {/* Action Buttons */}
-            <div className="box-border flex flex-col gap-[8px] items-start px-[24px] py-0 relative shrink-0 w-full">
+            <motion.div
+              className="box-border flex flex-col gap-[8px] items-start px-[24px] py-0 relative shrink-0 w-full"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.4, ease: [0.32, 0.72, 0, 1] }}
+            >
               <motion.button
                 onClick={handleGenerate}
                 disabled={!preview || isOnCooldown || isProcessing}
@@ -191,8 +215,8 @@ export function UploadScreen({ onImageSelected, onBack, cooldownSeconds = 0 }: U
                   </p>
                 </div>
               </motion.button>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         </div>
 
         {/* Hidden file input */}

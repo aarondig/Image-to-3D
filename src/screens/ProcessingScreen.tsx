@@ -1,5 +1,6 @@
 import { Loader2 } from 'lucide-react';
 import { useMemo } from 'react';
+import { motion } from 'framer-motion';
 import { useSpring, animated } from '@react-spring/web';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
@@ -145,9 +146,19 @@ export function ProcessingScreen({
       <div className="bg-neutral-900 box-border flex flex-col gap-[40px] items-center pb-[40px] pt-[24px] px-[24px] relative w-full min-h-[640px]">
         <div className="w-full max-w-md mx-auto flex flex-col gap-[24px]">
           {/* Header Card */}
-          <div className="bg-[#1e1e1e] box-border flex flex-col gap-[24px] items-start px-[24px] py-[24px] relative rounded-[24px] shrink-0 w-full border border-neutral-800 shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
+          <motion.div
+            className="bg-[#1e1e1e] box-border flex flex-col gap-[24px] items-start px-[24px] py-[24px] relative rounded-[24px] shrink-0 w-full border border-neutral-800 shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.1, ease: [0.32, 0.72, 0, 1] }}
+          >
             {/* Header with Icon */}
-            <div className="flex items-center justify-between relative shrink-0 w-full">
+            <motion.div
+              className="flex items-center justify-between relative shrink-0 w-full"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5, delay: 0.2, ease: [0.32, 0.72, 0, 1] }}
+            >
               <div className="flex flex-col gap-[6px] items-start relative shrink-0 flex-1">
                 <p className="font-semibold text-[14px] leading-[20px] text-white">
                   Generating Mesh
@@ -162,21 +173,30 @@ export function ProcessingScreen({
               >
                 <Loader2 className="h-[32px] w-[32px] text-white animate-spin" strokeWidth={2} />
               </animated.div>
-            </div>
+            </motion.div>
 
             {/* Progress Section with Image and Percentage */}
-            <div className="flex gap-[16px] items-center relative shrink-0 w-full">
+            <motion.div
+              className="flex gap-[16px] items-center relative shrink-0 w-full"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.3, ease: [0.32, 0.72, 0, 1] }}
+            >
               {/* Thumbnail */}
-              <animated.div
-                style={imageSpring}
+              <motion.div
+                layout
                 className="bg-[#2c2c2c] relative rounded-[16px] shrink-0 size-[50px] border border-neutral-700 shadow-[0px_1px_2px_0px_rgba(0,0,0,0.1)] overflow-hidden"
               >
-                <img
+                <motion.img
+                  layoutId="uploadImage"
                   src={image}
                   alt="Processing"
                   className="w-full h-full object-cover"
+                  transition={{
+                    layout: { duration: 0.6, ease: [0.32, 0.72, 0, 1] }
+                  }}
                 />
-              </animated.div>
+              </motion.div>
 
               {/* Progress Details */}
               <div className="flex flex-col gap-[12px] items-center flex-1 relative shrink-0">
@@ -203,11 +223,16 @@ export function ProcessingScreen({
                   />
                 </div>
               </div>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
 
           {/* Progressive Phase Tracking */}
-          <div className="flex flex-col items-start px-[24px] relative shrink-0 w-full">
+          <motion.div
+            className="flex flex-col items-start px-[24px] relative shrink-0 w-full"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.4, ease: [0.32, 0.72, 0, 1] }}
+          >
             {orderedPhases.map((phase) => (
               <ProgressStage
                 key={phase.key}
@@ -220,7 +245,7 @@ export function ProcessingScreen({
                 rightSublabel={phase.rightSublabel}
               />
             ))}
-          </div>
+          </motion.div>
         </div>
       </div>
 
