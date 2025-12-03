@@ -15,7 +15,7 @@ function PreviewModel() {
 
   return (
     <Center>
-      <primitive object={scene} scale={2.5} />
+      <primitive object={scene} scale={1.5} metalness={.2} roughness={.7}/>
     </Center>
   );
 }
@@ -358,9 +358,9 @@ export function DesktopHomeUpload({
           {/* Canvas - Fills available space */}
           <div className="flex-1 p-6 min-h-0">
             <div className="w-full h-full bg-[#1e1e1e] border border-neutral-800 rounded-[32px] overflow-hidden">
-              <Canvas camera={{ position: [0, 0, 5], fov: 40 }} style={{ touchAction: 'none' }}>
-                <ambientLight intensity={0.7} />
-                <directionalLight position={[10, 10, 5]} intensity={1.5} />
+              <Canvas camera={{ position: [0, 6, 24], fov: 25 }} style={{ touchAction: 'none' }}>
+                <ambientLight intensity={0.2} />
+
                 <Suspense fallback={<LoadingCube />}>
                   <PreviewModel />
                 </Suspense>
