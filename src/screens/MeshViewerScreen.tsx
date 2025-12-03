@@ -432,12 +432,7 @@ export function MeshViewerScreen({
         </motion.div>
 
         {/* 3D Canvas */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.2, duration: 0.5 }}
-          className="flex-1 relative min-h-[400px]"
-        >
+        <div className="flex-1 relative min-h-[400px]">
           <div className="absolute inset-0">
             <ErrorBoundary
               FallbackComponent={ErrorFallback}
@@ -468,7 +463,7 @@ export function MeshViewerScreen({
               </Canvas>
             </ErrorBoundary>
           </div>
-        </motion.div>
+        </div>
       </div>
 
       {/* Footer */}

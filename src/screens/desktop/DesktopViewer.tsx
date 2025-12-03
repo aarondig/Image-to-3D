@@ -79,6 +79,7 @@ export function DesktopViewer({ modelUrl, onUploadAnother, onLogoClick }: Deskto
           <div className="h-[84px] border-b border-neutral-800 flex items-center justify-center px-6">
             <motion.button
               layoutId="sidebar-logo"
+              initial={{ opacity: 1 }}
               onClick={onLogoClick || onUploadAnother}
               className="cursor-pointer overflow-clip relative shrink-0 size-9"
             >
@@ -90,9 +91,10 @@ export function DesktopViewer({ modelUrl, onUploadAnother, onLogoClick }: Deskto
 
           {/* Footer - Icons stacked vertically */}
           <div className="flex-1 flex flex-col justify-end items-center pb-10">
-            <motion.div layoutId="social-icons" className="flex flex-col gap-2">
+            <motion.div layoutId="social-icons" initial={{ opacity: 1 }} className="flex flex-col gap-2">
               <motion.a
                 layoutId="linkedin-icon"
+                initial={{ opacity: 1 }}
                 href={safeHref("https://linkedin.com/in/aarondiggdon")}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -106,6 +108,7 @@ export function DesktopViewer({ modelUrl, onUploadAnother, onLogoClick }: Deskto
               </motion.a>
               <motion.a
                 layoutId="portfolio-icon"
+                initial={{ opacity: 1 }}
                 href={safeHref("https://aarondig.com")}
                 target="_blank"
                 rel="noopener noreferrer"
