@@ -9,17 +9,12 @@ interface ResponsiveScreenProps {
 export function ResponsiveScreen({ mobile, desktop }: ResponsiveScreenProps) {
   const isDesktop = useIsDesktop();
 
-  return (
-    <>
-      {/* Mobile Layout */}
-      <div className={isDesktop ? 'hidden' : 'block'}>
-        {mobile}
-      </div>
+  // Conditionally render only the appropriate layout
+  // This prevents lazy-loaded desktop components from loading on mobile
+  // and avoids Suspense fallback flashes during StrictMode double-mounting
+  if (isDesktop) {
+    return <>{desktop}</>;
+  }
 
-      {/* Desktop Layout */}
-      <div className={isDesktop ? 'block' : 'hidden'}>
-        {desktop}
-      </div>
-    </>
-  );
+  return <>{mobile}</>;
 }

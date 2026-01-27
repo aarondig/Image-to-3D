@@ -98,6 +98,7 @@ export function DesktopHomeUpload({
     setIsDragging(false);
   }, []);
 
+  console.log(isSidebarOpen)
   return (
     <DesktopLayout
       sidebar={
@@ -168,13 +169,13 @@ export function DesktopHomeUpload({
           <div className="flex-1 flex flex-col justify-between p-6 overflow-hidden">
             {/* Upload Card - 368px width */}
             <div>
-            <AnimatePresence mode="wait">
+            <AnimatePresence mode="sync">
               {isSidebarOpen && (
                 <motion.div
                   key="upload-card"
                   layoutId="main-card"
                   className="bg-[#1e1e1e] flex flex-col gap-6 p-6 rounded-3xl border border-neutral-800 shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)] w-[368px]"
-                  initial={{ opacity: 0, x: -30 }}
+                  initial={{ opacity: 1, x: -30 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -30 }}
                   transition={{
